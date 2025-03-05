@@ -1,0 +1,16 @@
+{
+  "sport": "football",
+  "date": "2024-03-05",
+  "matches": [
+    {
+      "team1": "Manchester United",
+      "team2": "Liverpool",
+      "score": "2-1"
+    },
+    {
+      "team1": "Arsenal",
+      "team2": "Chelsea",
+      "score": "3-1"
+    }
+  ]
+}
