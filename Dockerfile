@@ -4,8 +4,8 @@ FROM node:20
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package.json package-lock.json ./
+# Copy package.json and package-lock.json to the working directory
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
@@ -13,8 +13,17 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Expose the port your app runs on
+# Copy the entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Expose the port the app runs on
 EXPOSE 8000
 
-# Command to run your application
+# Define the entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Define the command to run the application
 CMD ["node", "index.js"]

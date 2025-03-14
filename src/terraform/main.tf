@@ -45,6 +45,26 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   })
 }
 
+resource "aws_iam_policy" "s3_access_policy" {
+  name        = "S3AccessPolicy"
+  description = "Allow ECS task to access S3 bucket"
+  policy      = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:GetObject"]
+        Resource = "arn:aws:s3:::nba-prediction-bucket-seng3011/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_s3_access" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = aws_iam_policy.s3_access_policy.arn
+}
+
 # Attach the AmazonECSTaskExecutionRolePolicy to the IAM Role
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
@@ -71,47 +91,47 @@ resource "aws_ecs_task_definition" "nba_prediction_task" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
-  {
-    name      = "nba-prediction-app"
-    image     = "851725446831.dkr.ecr.us-east-1.amazonaws.com/nba-prediction-app:latest"
-    essential = true
-    portMappings = [
-      {
-        containerPort = 8000
-        hostPort      = 8000
+    {
+      name      = "nba-prediction-app"
+      image     = "851725446831.dkr.ecr.us-east-1.amazonaws.com/nba-prediction-app:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 8000
+          hostPort      = 8000
+        }
+      ]
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
       }
-    ]
-    healthCheck = {
-      command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval    = 30
-      timeout     = 5
-      retries     = 3
-      startPeriod = 60
+      environment = [
+        {
+          name  = "AWS_ACCESS_KEY_ID"
+          value = var.aws_access_key_id
+        },
+        {
+          name  = "AWS_SECRET_ACCESS_KEY"
+          value = var.aws_secret_access_key
+        },
+        {
+          name  = "S3_BUCKET_NAME"
+          value = aws_s3_bucket.nba_prediction_bucket.bucket
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.nba_prediction_log_group.name
+          awslogs-region        = "us-east-1"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
-    environment = [
-      {
-        name  = "AWS_ACCESS_KEY_ID"
-        value = var.aws_access_key_id
-      },
-      {
-        name  = "AWS_SECRET_ACCESS_KEY"
-        value = var.aws_secret_access_key
-      },
-      {
-        name  = "S3_BUCKET_NAME"
-        value = aws_s3_bucket.nba_prediction_bucket.bucket
-      }
-    ]
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        awslogs-group         = aws_cloudwatch_log_group.nba_prediction_log_group.name
-        awslogs-region        = "us-east-1"
-        awslogs-stream-prefix = "ecs"
-      }
-    }
-  }
-])
+  ])
 }
 
 # VPC
