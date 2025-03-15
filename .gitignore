@@ -24,3 +24,9 @@ logs
 
 # Environment variables
 .env*
+
+# Ignore Terraform files
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
