@@ -109,6 +109,19 @@ resource "aws_lambda_function" "nba_retriever_lambda" {
   }
 }
 
+# Lambda Function for Data Analysis
+resource "aws_lambda_function" "nba_analyse_lambda" {
+  function_name = "nba-analyse-lambda"
+  handler       = "team-analyse.handler"
+  runtime       = "nodejs18.x"
+  role          = aws_iam_role.lambda_exec_role.arn
+
+  filename         = "lambda-deployment-package-analyse.zip"
+  source_code_hash = filebase64sha256("lambda-deployment-package-analyse.zip")
+
+  timeout     = 30
+}
+
 # API Gateway
 resource "aws_api_gateway_rest_api" "nba_prediction_api" {
   name        = "nba-prediction-api"
@@ -167,6 +180,33 @@ resource "aws_api_gateway_integration" "retrieve_integration" {
   uri                     = aws_lambda_function.nba_retriever_lambda.invoke_arn
 }
 
+# API Gateway Resource for Team Analysis
+resource "aws_api_gateway_resource" "analyse" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
+  path_part   = "analyse"
+}
+
+# API Gateway Method for Team Analysis
+resource "aws_api_gateway_method" "analyse_method" {
+  rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id   = aws_api_gateway_resource.analyse.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+# API Gateway Integration for Team Analysis
+resource "aws_api_gateway_integration" "analyse_integration" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_method.analyse_method.resource_id
+  http_method = aws_api_gateway_method.analyse_method.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.nba_analyse_lambda.invoke_arn
+}
+
+
 # Lambda Permission for API Gateway (Scrape)
 resource "aws_lambda_permission" "apigw_scrape_lambda" {
   statement_id  = "AllowAPIGatewayInvokeScrape"
@@ -187,12 +227,23 @@ resource "aws_lambda_permission" "apigw_retriever_lambda" {
   source_arn = "${aws_api_gateway_rest_api.nba_prediction_api.execution_arn}/*/*"
 }
 
+# Lambda Permission for API Gateway (Team Analysis)
+resource "aws_lambda_permission" "apigw_analyse_lambda" {
+  statement_id  = "AllowAPIGatewayInvokeAnalyse"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.nba_analyse_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.nba_prediction_api.execution_arn}/*/*"
+}
+
 # API Gateway Deployment
 resource "aws_api_gateway_deployment" "nba_prediction_deployment" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   depends_on  = [
     aws_api_gateway_integration.scrape_integration,
-    aws_api_gateway_integration.retrieve_integration
+    aws_api_gateway_integration.retrieve_integration,
+    aws_api_gateway_integration.analyse_integration
   ]
 }
 

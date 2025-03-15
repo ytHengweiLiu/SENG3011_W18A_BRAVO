@@ -1,0 +1,15 @@
+{
+  "name": "analytical-model",
+  "version": "1.0.0",
+  "main": "analytical-model.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "https": "^1.0.0"
+  }
+}
