@@ -1,0 +1,41 @@
+[
+  {
+    "attributes": {
+      "Team": "Boston Celtics",
+      "Pts": 120.5,
+      "FG%": 48.2,
+      "3P%": 39.7,
+      "FT%": 82.1,
+      "Ast": 26.7,
+      "TO": 12.8,
+      "Reb": 44.6,
+      "Stl": 7.2
+    }
+  },
+  {
+    "attributes": {
+      "Team": "Los Angeles Lakers",
+      "Pts": 116.3,
+      "FG%": 47.5,
+      "3P%": 36.8,
+      "FT%": 78.9,
+      "Ast": 25.9,
+      "TO": 13.4,
+      "Reb": 42.8,
+      "Stl": 6.9
+    }
+  },
+  {
+    "attributes": {
+      "Team": "Golden State Warriors",
+      "Pts": 118.7,
+      "FG%": 49.1,
+      "3P%": 41.2,
+      "FT%": 81.4,
+      "Ast": 28.3,
+      "TO": 14.1,
+      "Reb": 43.2,
+      "Stl": 8.1
+    }
+  }
+]
