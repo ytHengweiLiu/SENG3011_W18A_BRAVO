@@ -2,7 +2,7 @@
 
 ## NBA Stats Scraper and Analyzer
 
-his project is a serverless application that scrapes NBA team stats from a website, stores the data in an S3 bucket, and provides an API to retrieve and analyze the data. The application is built using AWS Lambda, API Gateway, S3, and Terraform for infrastructure as code.
+This project is a serverless application that scrapes NBA team stats from a website, stores the data in an S3 bucket, and provides an API to retrieve and analyze the data. The application is built using AWS Lambda, API Gateway, S3, and Terraform for infrastructure as code.
 
 ### Team Members
 
