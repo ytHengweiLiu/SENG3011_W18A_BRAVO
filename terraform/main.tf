@@ -203,6 +203,29 @@ resource "aws_api_gateway_stage" "nba_prediction_stage" {
   deployment_id = aws_api_gateway_deployment.nba_prediction_deployment.id
 }
 
+# CloudWatch Event Rule to trigger the scraper function daily
+resource "aws_cloudwatch_event_rule" "daily_scraper_trigger" {
+  name                = "daily-scraper-trigger"
+  description         = "Trigger the NBA scraper Lambda function daily"
+  schedule_expression = "cron(0 12 * * ? *)"  # Runs daily at 12:00 PM UTC
+}
+
+# CloudWatch Event Target to invoke the scraper Lambda function
+resource "aws_cloudwatch_event_target" "invoke_scraper_lambda" {
+  rule      = aws_cloudwatch_event_rule.daily_scraper_trigger.name
+  target_id = "InvokeScraperLambda"
+  arn       = aws_lambda_function.nba_scraper_lambda.arn
+}
+
+# Lambda Permission to allow CloudWatch Events to invoke the scraper function
+resource "aws_lambda_permission" "allow_cloudwatch_to_invoke_scraper" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.nba_scraper_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.daily_scraper_trigger.arn
+}
+
 # Outputs
 output "lambda_arn" {
   value = aws_lambda_function.nba_scraper_lambda.arn
