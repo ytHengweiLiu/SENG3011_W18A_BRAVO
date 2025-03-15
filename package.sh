@@ -9,3 +9,11 @@ zip -r ../../terraform/lambda-deployment-package-collect.zip .
 cd ../data-retrieve
 npm install
 zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
+
+# Run terraform
+cd ../../terraform
+terraform init
+terraform apply
+
+# Remove zip files
+rm lambda-deployment-package-collect.zip lambda-deployment-package-retrieve.zip
