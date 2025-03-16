@@ -2,15 +2,14 @@ const https = require('https')
 
 // May need to change API endpoint
 const DATA_RETRIEVAL_API =
-  'https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/retrieve'
+  process.env.DATA_RETRIEVAL_API ||
+  'https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/retrieve' // Fallback for local testing
 
 const fetchFromDataRetrievalApi = async () => {
   return new Promise((resolve, reject) => {
     try {
       // Parse the API URL
       const apiUrl = new URL(DATA_RETRIEVAL_API)
-
-      console.log(`Requesting: ${apiUrl.toString()}`)
 
       // Request options
       const options = {
@@ -22,13 +21,8 @@ const fetchFromDataRetrievalApi = async () => {
         }
       }
 
-      console.log('Request options:', JSON.stringify(options))
-
       const req = https.request(options, response => {
         let data = ''
-
-        console.log(`Response status: ${response.statusCode}`)
-        console.log(`Response headers: ${JSON.stringify(response.headers)}`)
 
         // A chunk of data has been received
         response.on('data', chunk => {
@@ -80,17 +74,14 @@ const extractTeamStats = teamData => {
     return null
   }
 
-  // Extract the relevant stats from attributes
-  const stats = {
-    'FG%': parseFloat(teamData.attributes['FG%']),
-    '3P%': parseFloat(teamData.attributes['3P%']),
-    AST: parseFloat(teamData.attributes['Ast']),
-    REB: parseFloat(teamData.attributes['Reb']),
-    STL: parseFloat(teamData.attributes['Stl']),
-    PTS: parseFloat(teamData.attributes['Pts']),
-    BLK: parseFloat(teamData.attributes['Blk']),
-    TO: parseFloat(teamData.attributes['TO'])
-  }
+  const stats = { ...teamData.attributes }
+
+  // Convert string values to numbers
+  Object.keys(stats).forEach(key => {
+    if (key !== 'Team' && typeof stats[key] === 'string') {
+      stats[key] = parseFloat(stats[key])
+    }
+  })
 
   return stats
 }
@@ -101,42 +92,53 @@ const compareTeamStats = (team1Stats, team2Stats) => {
 
   const differences = {}
 
-  // Focus on just a few key statistics for the MVP
-  const keyStats = ['FG%', '3P%', 'AST', 'REB', 'STL']
-
-  keyStats.forEach(stat => {
+  // Calculate differences for all stats except Team
+  Object.keys(team1Stats).forEach(stat => {
     if (
+      stat !== 'Team' &&
       typeof team1Stats[stat] === 'number' &&
       typeof team2Stats[stat] === 'number'
     ) {
-      const value1 = parseFloat(team1Stats[stat])
-      const value2 = parseFloat(team2Stats[stat])
-
-      console.log(`Stat: ${stat}, Value1: ${value1}, Value2: ${value2}`)
-
-      if (!isNaN(value1) && !isNaN(value2)) {
-        differences[stat] = value1 - value2
-      } else {
-        console.log(`Skipping stat: ${stat} due to missing or invalid values`)
-      }
+      differences[stat] = team1Stats[stat] - team2Stats[stat]
     }
   })
+
   console.log('Calculated differences:', JSON.stringify(differences))
   return differences
 }
 
+const calculateWinProbability = statDifferences => {
+  let favorableStats = 0
+  let totalStats = 0
+
+  // Count favorable stats for team1
+  Object.entries(statDifferences).forEach(([stat, value]) => {
+    totalStats++
+
+    // For turnovers, lower is better (negative difference is favorable)
+    if (stat === 'TO') {
+      if (value < 0) {
+        favorableStats++
+      }
+    }
+    // For all other stats, higher is better (positive difference is favorable)
+    else if (value > 0) {
+      favorableStats++
+    }
+  })
+
+  // Calculate probability for each team
+  const team1Probability = favorableStats / totalStats
+  const team2Probability = (totalStats - favorableStats) / totalStats
+
+  return { team1Probability, team2Probability }
+}
+
 exports.handler = async (event, context) => {
-  console.log('Handler started')
   try {
     console.log('Request received:', JSON.stringify(event))
-    console.log('Request received:', JSON.stringify(event))
-
-    // Parse the request parameters
-    console.log('Parsing request body')
     const bodyParams = event.body ? JSON.parse(event.body) : {}
-    console.log('Parsed body:', bodyParams)
     const { team1, team2 } = bodyParams
-    console.log(`Extracted teams: ${team1}, ${team2}`)
 
     // Validate input parameters
     if (!team1 || !team2) {
@@ -155,7 +157,6 @@ exports.handler = async (event, context) => {
 
     // Fetch team data from the data retrieval API
     console.log(`Fetching data for teams: ${team1} and ${team2}`)
-
     const allTeamsResponse = await fetchFromDataRetrievalApi()
 
     // Log the structure of the response
@@ -194,7 +195,7 @@ exports.handler = async (event, context) => {
     const team1Stats = extractTeamStats(team1Data)
     const team2Stats = extractTeamStats(team2Data)
 
-    // Log the extracted stats for debugging
+    // Log the extracted stats
     console.log('Team 1 stats:', JSON.stringify(team1Stats))
     console.log('Team 2 stats:', JSON.stringify(team2Stats))
 
@@ -216,6 +217,22 @@ exports.handler = async (event, context) => {
     // Calculate basic statistical differences
     const statDifferences = compareTeamStats(team1Stats, team2Stats)
 
+    // Calculate win probability
+    const { team1Probability, team2Probability } =
+      calculateWinProbability(statDifferences)
+    console.log(
+      'Win probabilities:',
+      JSON.stringify({
+        [team1Stats.Team]: team1Probability,
+        [team2Stats.Team]: team2Probability
+      })
+    )
+
+    const winProbabilities = {
+      [team1Stats.Team]: team1Probability,
+      [team2Stats.Team]: team2Probability
+    }
+
     // Return successful response
     return {
       statusCode: 200,
@@ -225,11 +242,12 @@ exports.handler = async (event, context) => {
       },
       body: JSON.stringify({
         analysis: {
-          team1: team1,
-          team2: team2,
-          team1Stats: team1Stats,
-          team2Stats: team2Stats,
-          statDifferences: statDifferences,
+          // team1: team1,
+          // team2: team2,
+          // team1Stats: team1Stats,
+          // team2Stats: team2Stats,
+          // statDifferences: statDifferences,
+          winProbabilities: winProbabilities,
           analysisTimestamp: new Date().toISOString()
         }
       })
@@ -238,7 +256,6 @@ exports.handler = async (event, context) => {
     console.error('Error processing request:', error)
     console.error('Error stack:', error.stack)
 
-    // More detailed logging
     if (error.response) {
       console.error('Error response:', error.response)
     }
