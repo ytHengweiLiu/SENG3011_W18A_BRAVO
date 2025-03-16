@@ -54,8 +54,13 @@ resource "aws_iam_policy" "lambda_s3_access_policy" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["s3:PutObject", "s3:GetObject"]
-        Resource = "${aws_s3_bucket.nba_prediction_bucket.arn}/*"
+        Action   = ["s3:ListBucket"]
+        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011"]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject"]
+        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011/*"]
       }
     ]
   })
