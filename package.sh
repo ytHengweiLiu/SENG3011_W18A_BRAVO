@@ -24,5 +24,5 @@ terraform init
 terraform apply
 
 # Remove zip files
-# rm lambda-deployment-package-collect.zip lambda-deployment-package-retrieve.zip lambda-deployment-package-analyse.zip
+rm lambda-deployment-package-collect.zip lambda-deployment-package-retrieve.zip lambda-deployment-package-analyse.zip
 # rm lambda-deployment-package-analytics.zip
