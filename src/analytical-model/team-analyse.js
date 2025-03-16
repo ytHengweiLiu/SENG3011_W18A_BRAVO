@@ -137,7 +137,7 @@ const calculateWinProbability = statDifferences => {
 exports.handler = async (event, context) => {
   try {
     console.log('Request received:', JSON.stringify(event))
-    const bodyParams = event.body ? JSON.parse(event.body) : {}
+    const bodyParams = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
     const { team1, team2 } = bodyParams
 
     // Validate input parameters
