@@ -4,7 +4,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 // Initialize the S3 client
 const s3Client = new S3Client({
-  region: "us-east-1", 
+  region: "us-east-1",
 });
 
 const scrapeData = async () => {
@@ -52,21 +52,28 @@ const scrapeData = async () => {
 
     // Upload to S3
     const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    const key = `${process.env.S3_FILE_PREFIX}/${date}/data.json`; // Use environment variable for file prefix
+    const key = `${process.env.S3_FILE_PREFIX}/${date}/data.json`;
     await uploadToS3(jsonData, process.env.S3_BUCKET_NAME, key);
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+      },
       body: JSON.stringify({ message: "Data scraped and uploaded to S3 successfully." }),
     };
   } catch (error) {
     console.error("Error:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Failed to scrape data or upload to S3.",
-        details: error.message,
-      }),
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+      },
+      body: JSON.stringify({ error: "Failed to scrape data or upload to S3.", details: error.message }),
     };
   }
 };

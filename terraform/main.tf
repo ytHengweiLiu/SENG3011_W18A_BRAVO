@@ -81,35 +81,37 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 # Lambda Function for Data Collection
 resource "aws_lambda_function" "nba_scraper_lambda" {
   function_name = "nba-scraper-lambda"
-  handler       = "data-collect.handler"  # Handler for data-collect.js
+  handler       = "data-collect.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-collect.zip"  # Path to the ZIP file
+  filename         = "lambda-deployment-package-collect.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-collect.zip")
 
   environment {
     variables = {
       S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
-      S3_FILE_PREFIX = "nba-stats"  # Prefix for the S3 file path
+      S3_FILE_PREFIX = "nba-stats"
     }
   }
+
+  timeout     = 45
 }
 
 # Lambda Function for Data Retrieval
 resource "aws_lambda_function" "nba_retriever_lambda" {
   function_name = "nba-retriever-lambda"
-  handler       = "data-retrieve.handler"  # Handler for data-retrieve.js
+  handler       = "data-retrieve.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-retrieve.zip"  # Path to the ZIP file
+  filename         = "lambda-deployment-package-retrieve.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-retrieve.zip")
 
   environment {
     variables = {
       S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
-      S3_FILE_PREFIX = "nba-stats"  # Prefix for the S3 file path
+      S3_FILE_PREFIX = "nba-stats"
     }
   }
 }
@@ -137,21 +139,21 @@ resource "aws_api_gateway_rest_api" "nba_prediction_api" {
 resource "aws_api_gateway_resource" "scrape" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "scrape"  # Resource path
+  path_part   = "scrape"
 }
 
 # API Gateway Method for Scrape
 resource "aws_api_gateway_method" "scrape_method" {
   rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
   resource_id   = aws_api_gateway_resource.scrape.id
-  http_method   = "GET"  # HTTP method
-  authorization = "NONE"  # Allow public access
+  http_method   = "GET"
+  authorization = "NONE"
 }
 
 # API Gateway Integration for Scrape
 resource "aws_api_gateway_integration" "scrape_integration" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
-  resource_id = aws_api_gateway_method.scrape_method.resource_id
+  resource_id = aws_api_gateway_resource.scrape.id
   http_method = aws_api_gateway_method.scrape_method.http_method
 
   integration_http_method = "POST"
@@ -163,21 +165,21 @@ resource "aws_api_gateway_integration" "scrape_integration" {
 resource "aws_api_gateway_resource" "retrieve" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "retrieve"  # Resource path
+  path_part   = "retrieve"
 }
 
 # API Gateway Method for Retrieve
 resource "aws_api_gateway_method" "retrieve_method" {
   rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
   resource_id   = aws_api_gateway_resource.retrieve.id
-  http_method   = "GET"  # HTTP method
-  authorization = "NONE"  # Allow public access
+  http_method   = "GET"
+  authorization = "NONE"
 }
 
 # API Gateway Integration for Retrieve
 resource "aws_api_gateway_integration" "retrieve_integration" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
-  resource_id = aws_api_gateway_method.retrieve_method.resource_id
+  resource_id = aws_api_gateway_resource.retrieve.id
   http_method = aws_api_gateway_method.retrieve_method.http_method
 
   integration_http_method = "POST"
@@ -203,14 +205,13 @@ resource "aws_api_gateway_method" "analyse_method" {
 # API Gateway Integration for Team Analysis
 resource "aws_api_gateway_integration" "analyse_integration" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
-  resource_id = aws_api_gateway_method.analyse_method.resource_id
+  resource_id = aws_api_gateway_resource.analyse.id
   http_method = aws_api_gateway_method.analyse_method.http_method
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.nba_analyse_lambda.invoke_arn
 }
-
 
 # Lambda Permission for API Gateway (Scrape)
 resource "aws_lambda_permission" "apigw_scrape_lambda" {
@@ -240,6 +241,60 @@ resource "aws_lambda_permission" "apigw_analyse_lambda" {
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_api_gateway_rest_api.nba_prediction_api.execution_arn}/*/*"
+}
+
+# API Gateway Method for OPTIONS (CORS)
+resource "aws_api_gateway_method" "scrape_options_method" {
+  rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id   = aws_api_gateway_resource.scrape.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# API Gateway Integration for OPTIONS (CORS)
+resource "aws_api_gateway_integration" "scrape_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.scrape.id
+  http_method = aws_api_gateway_method.scrape_options_method.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+# API Gateway Method Response for OPTIONS (CORS)
+resource "aws_api_gateway_method_response" "scrape_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.scrape.id
+  http_method = aws_api_gateway_method.scrape_options_method.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+# API Gateway Integration Response for OPTIONS (CORS)
+resource "aws_api_gateway_integration_response" "scrape_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.scrape.id
+  http_method = aws_api_gateway_method.scrape_options_method.http_method
+  status_code = aws_api_gateway_method_response.scrape_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
 }
 
 # API Gateway Deployment
