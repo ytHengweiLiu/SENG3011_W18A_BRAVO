@@ -75,7 +75,7 @@ jobs:
           zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
           cd ../analytical-model
           zip -r ../../terraform/lambda-deployment-package-analyse.zip .
-          
+
       # Archive the packages as artifacts using v4
       - name: Archive Lambda deployment packages
         uses: actions/upload-artifact@v4
