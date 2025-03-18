@@ -17,14 +17,12 @@ locals {
       schedule       = "cron(0 13 * * ? *)" # Daily at 1:00 PM UTC (to avoid conflicts)
     }
   }
-
-  # Get the current environment's settings
-  current_env = local.env_settings[local.environment]
+  env_config = local.env_settings[local.environment]
 }
 
 # Provider Configuration
 provider "aws" {
-  region = "us-east-1" # Replace with your preferred region
+  region = "us-east-1"
 }
 
 # S3 Bucket
@@ -79,12 +77,12 @@ resource "aws_iam_policy" "lambda_s3_access_policy" {
       {
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]
-        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011${local.name_suffix}"]
+        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011"]
       },
       {
         Effect   = "Allow"
         Action   = ["s3:GetObject", "s3:PutObject"]
-        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011${local.name_suffix}/*"]
+        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011/*"]
       }
     ]
   })
@@ -115,11 +113,11 @@ resource "aws_lambda_function" "nba_scraper_lambda" {
   environment {
     variables = {
       S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
-      S3_FILE_PREFIX = local.current_env.s3_file_prefix
+      S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
 
-  timeout = 45
+  timeout = 29
 }
 
 # Lambda Function for Data Retrieval
@@ -135,7 +133,7 @@ resource "aws_lambda_function" "nba_retriever_lambda" {
   environment {
     variables = {
       S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
-      S3_FILE_PREFIX = local.current_env.s3_file_prefix
+      S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
 }
@@ -150,7 +148,7 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
   filename         = "lambda-deployment-package-analyse${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-analyse${local.name_suffix}.zip")
 
-  timeout = 30
+  timeout = 29 # AWS API Gateway limit
 
   environment {
     variables = {
@@ -161,7 +159,7 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "nba_prediction_api" {
-  name        = "nba-prediction-api${local.is_dev ? "-dev" : ""}"
+  name        = "nba-prediction-api${local.name_suffix}"
   description = "API Gateway for NBA Prediction Lambda"
 }
 
@@ -169,7 +167,7 @@ resource "aws_api_gateway_rest_api" "nba_prediction_api" {
 resource "aws_api_gateway_resource" "scrape" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "scrape${local.is_dev ? "-dev" : ""}"
+  path_part   = "scrape${local.name_suffix}"
 }
 
 # API Gateway Method for Scrape
@@ -195,7 +193,7 @@ resource "aws_api_gateway_integration" "scrape_integration" {
 resource "aws_api_gateway_resource" "retrieve" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "retrieve${local.is_dev ? "-dev" : ""}"
+  path_part   = "retrieve${local.name_suffix}"
 }
 
 # API Gateway Method for Retrieve
@@ -221,7 +219,7 @@ resource "aws_api_gateway_integration" "retrieve_integration" {
 resource "aws_api_gateway_resource" "analyse" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "analyse${local.is_dev ? "-dev" : ""}"
+  path_part   = "analyse${local.name_suffix}"
 }
 
 # API Gateway Method for Team Analysis
@@ -322,7 +320,7 @@ resource "aws_api_gateway_integration_response" "scrape_options_integration_resp
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
 }
@@ -339,7 +337,7 @@ resource "aws_api_gateway_deployment" "nba_prediction_deployment" {
 
 # API Gateway Stage
 resource "aws_api_gateway_stage" "nba_prediction_stage" {
-  stage_name    = "prod"
+  stage_name    = local.environment == "default" ? "prod" : local.environment
   rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
   deployment_id = aws_api_gateway_deployment.nba_prediction_deployment.id
 }
@@ -348,7 +346,7 @@ resource "aws_api_gateway_stage" "nba_prediction_stage" {
 resource "aws_cloudwatch_event_rule" "daily_scraper_trigger" {
   name                = "daily-scraper-trigger${local.name_suffix}"
   description         = "Trigger the NBA scraper Lambda function daily (${local.environment})"
-  schedule_expression = local.current_env.schedule
+  schedule_expression = local.env_config.schedule
 }
 
 # CloudWatch Event Target to invoke the scraper Lambda function
@@ -373,5 +371,5 @@ output "lambda_arn" {
 }
 
 output "api_url" {
-  value = "${aws_api_gateway_deployment.nba_prediction_deployment.invoke_url}/${aws_api_gateway_stage.nba_prediction_stage.stage_name}"
+  value = aws_api_gateway_stage.nba_prediction_stage.invoke_url
 }
