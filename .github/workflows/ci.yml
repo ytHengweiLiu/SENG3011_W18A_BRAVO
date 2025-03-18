@@ -1,0 +1,87 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.12.1
+
+      # Install dependencies for all services
+      - name: Install dependencies
+        run: |
+          cd src/data-collect
+          npm install
+          cd ../data-retrieve
+          npm install
+          cd ../analytical-model
+          npm install
+
+      # Run linting for each service
+      - name: Run linting
+        run: |
+          cd src/data-collect
+          npm install eslint --save-dev
+          npx eslint .
+          cd ../data-retrieve
+          npm install eslint --save-dev
+          npx eslint .
+          cd ../analytical-model
+          npm install eslint --save-dev
+          npx eslint .
+
+      # Run tests and collect coverage
+      - name: Run tests with coverage
+        run: |
+          cd src/data-collect
+          npm install jest --save-dev
+          npm test -- --coverage
+          cd ../data-retrieve
+          npm install jest --save-dev
+          npm test -- --coverage
+          cd ../analytical-model
+          npm install jest --save-dev
+          npm test -- --coverage
+
+      # Coverage checking
+      - name: Check coverage thresholds
+        run: |
+          cd src/data-collect
+          npx jest --coverage --coverageThreshold='{"global":{"branches":85,"functions":85,"lines":85,"statements":85}}'
+          cd ../data-retrieve
+          npx jest --coverage --coverageThreshold='{"global":{"branches":85,"functions":85,"lines":85,"statements":85}}'
+          cd ../analytical-model
+          npx jest --coverage --coverageThreshold='{"global":{"branches":85,"functions":85,"lines":85,"statements":85}}'
+
+      # Package Lambda functions (build step)
+      - name: Package Lambda functions
+        run: |
+          cd src/data-collect
+          zip -r ../../terraform/lambda-deployment-package-collect.zip .
+          cd ../data-retrieve
+          zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
+          cd ../analytical-model
+          zip -r ../../terraform/lambda-deployment-package-analyse.zip .
+          
+      # Archive the packages as artifacts so they can be used in the CD job
+      - name: Archive Lambda deployment packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-packages
+          path: |
+            terraform/lambda-deployment-package-collect.zip
+            terraform/lambda-deployment-package-retrieve.zip
+            terraform/lambda-deployment-package-analyse.zip
