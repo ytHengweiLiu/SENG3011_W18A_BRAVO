@@ -2,13 +2,14 @@ const https = require('https')
 
 // May need to change API endpoint
 const DATA_RETRIEVAL_API =
-  process.env.DATA_RETRIEVAL_API ||
-  'https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/prod/retrieve-dev' // Fallback for local testing
+  'https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/dev/retrieve-dev'
+// process.env.DATA_RETRIEVAL_API
 
 const fetchFromDataRetrievalApi = async () => {
   return new Promise((resolve, reject) => {
     try {
       // Parse the API URL
+      console.log(`Attempting to fetch from ${DATA_RETRIEVAL_API}`)
       const apiUrl = new URL(DATA_RETRIEVAL_API)
 
       // Request options
@@ -61,8 +62,8 @@ const fetchFromDataRetrievalApi = async () => {
 
 const findTeamData = (allTeams, teamName) => {
   if (!allTeams || !allTeams.events || !Array.isArray(allTeams.events)) {
-    console.error('Invalid ADAGE data structure:', JSON.stringify(allTeams));
-    return null;
+    console.error('Invalid ADAGE data structure:', JSON.stringify(allTeams))
+    return null
   }
 
   // Find the team in the events array
@@ -71,7 +72,7 @@ const findTeamData = (allTeams, teamName) => {
       event.attributes &&
       event.attributes.Team &&
       event.attributes.Team.toLowerCase() === teamName.toLowerCase()
-  );
+  )
 
   // // Find the team in the data array
   // return allTeams.find(
@@ -147,117 +148,144 @@ const calculateWinProbability = statDifferences => {
   return { team1Probability, team2Probability }
 }
 
-exports.handler = async (event) => {
+exports.handler = async event => {
   try {
-    console.log("Request received:", JSON.stringify(event));
-    const bodyParams = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-    const { team1, team2 } = bodyParams;
+    console.log('Request received:', JSON.stringify(event))
+    let team1, team2
+    if (event.body) {
+      // If body is a string, parse it
+      const bodyParams =
+        typeof event.body === 'string' ? JSON.parse(event.body) : event.body
+      team1 = bodyParams.team1
+      team2 = bodyParams.team2
+    } else if (event.queryStringParameters) {
+      team1 = event.queryStringParameters.team1
+      team2 = event.queryStringParameters.team2
+    } else {
+      team1 = event.team1
+      team2 = event.team2
+    }
 
     if (!team1 || !team2) {
       return {
         statusCode: 400,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
-          "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers':
+            'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+          'Access-Control-Allow-Methods': 'OPTIONS,POST'
         },
         body: JSON.stringify({
-          error: "Missing parameters",
-          message: "Please provide team IDs (team1 and team2)",
-        }),
-      };
+          error: 'Missing parameters',
+          message: 'Please provide team IDs (team1 and team2)'
+        })
+      }
     }
 
-    console.log(`Fetching data for teams: ${team1} and ${team2}`);
-    const allTeamsResponse = await fetchFromDataRetrievalApi();
+    console.log(`Fetching data for teams: ${team1} and ${team2}`)
+    const allTeamsResponse = await fetchFromDataRetrievalApi()
 
     console.log(
-      "API response structure:",
+      'API response structure:',
       JSON.stringify({
         hasEvents: !!allTeamsResponse.events,
         eventsIsArray: Array.isArray(allTeamsResponse.events),
-        eventsLength: Array.isArray(allTeamsResponse.events) ? allTeamsResponse.events.length : 0,
+        eventsLength: Array.isArray(allTeamsResponse.events)
+          ? allTeamsResponse.events.length
+          : 0
       })
-    );
+    )
 
-    const team1Data = findTeamData(allTeamsResponse, team1);
-    const team2Data = findTeamData(allTeamsResponse, team2);
+    const team1Data = findTeamData(allTeamsResponse, team1)
+    const team2Data = findTeamData(allTeamsResponse, team2)
 
     if (!team1Data || !team2Data) {
       return {
         statusCode: 404,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
-          "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers':
+            'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+          'Access-Control-Allow-Methods': 'OPTIONS,POST'
         },
         body: JSON.stringify({
-          error: "Team data not found",
-          message: `Could not find data for ${!team1Data ? team1 : ""} ${!team2Data ? team2 : ""}`,
-        }),
-      };
+          error: 'Team data not found',
+          message: `Could not find data for ${!team1Data ? team1 : ''} ${
+            !team2Data ? team2 : ''
+          }`
+        })
+      }
     }
 
-    const team1Stats = extractTeamStats(team1Data);
-    const team2Stats = extractTeamStats(team2Data);
+    const team1Stats = extractTeamStats(team1Data)
+    const team2Stats = extractTeamStats(team2Data)
 
     if (!team1Stats || !team2Stats) {
       return {
         statusCode: 422,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
-          "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers':
+            'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+          'Access-Control-Allow-Methods': 'OPTIONS,POST'
         },
         body: JSON.stringify({
-          error: "Invalid data format",
-          message: "Team statistics not available in the provided data",
-        }),
-      };
+          error: 'Invalid data format',
+          message: 'Team statistics not available in the provided data'
+        })
+      }
     }
 
-    const statDifferences = compareTeamStats(team1Stats, team2Stats);
-    const { team1Probability, team2Probability } = calculateWinProbability(statDifferences);
+    const statDifferences = compareTeamStats(team1Stats, team2Stats)
+    const { team1Probability, team2Probability } =
+      calculateWinProbability(statDifferences)
 
     console.log(
-      "Win probabilities:",
+      'Win probabilities:',
       JSON.stringify({
         [team1Stats.Team]: team1Probability,
-        [team2Stats.Team]: team2Probability,
+        [team2Stats.Team]: team2Probability
       })
-    );
+    )
 
     return {
       statusCode: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
-        "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers':
+          'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+        'Access-Control-Allow-Methods': 'OPTIONS,POST'
       },
       body: JSON.stringify({
         analysis: {
           winProbabilities: {
             [team1Stats.Team]: team1Probability,
-            [team2Stats.Team]: team2Probability,
+            [team2Stats.Team]: team2Probability
           },
-          analysisTimestamp: new Date().toISOString(),
-        },
-      }),
-    };
+          analysisTimestamp: new Date().toISOString()
+        }
+      })
+    }
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error('Error processing request:', error)
 
     return {
       statusCode: 500,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
-        "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers':
+          'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+        'Access-Control-Allow-Methods': 'OPTIONS,POST'
       },
       body: JSON.stringify({
-        error: "Analysis failed",
-        message: "An error occurred while processing the request",
-      }),
-    };
+        error: 'Analysis failed',
+        message: 'An error occurred while processing the request'
+      })
+    }
   }
-};
+}

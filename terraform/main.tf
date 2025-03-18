@@ -325,6 +325,104 @@ resource "aws_api_gateway_integration_response" "scrape_options_integration_resp
   }
 }
 
+# API Gateway Method for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_method" "retrieve_options_method" {
+  rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id   = aws_api_gateway_resource.retrieve.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# API Gateway Integration for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_integration" "retrieve_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.retrieve.id
+  http_method = aws_api_gateway_method.retrieve_options_method.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+# API Gateway Method Response for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_method_response" "retrieve_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.retrieve.id
+  http_method = aws_api_gateway_method.retrieve_options_method.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+# API Gateway Integration Response for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_integration_response" "retrieve_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.retrieve.id
+  http_method = aws_api_gateway_method.retrieve_options_method.http_method
+  status_code = aws_api_gateway_method_response.retrieve_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+resource "aws_api_gateway_method" "analyse_options_method" {
+  rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id   = aws_api_gateway_resource.analyse.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "analyse_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_options_method.http_method
+  type        = "MOCK"
+  
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "analyse_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_options_method.http_method
+  status_code = "200"
+  
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "analyse_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_options_method.http_method
+  status_code = aws_api_gateway_method_response.analyse_options_200.status_code
+  
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'",
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 # API Gateway Deployment
 resource "aws_api_gateway_deployment" "nba_prediction_deployment" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
