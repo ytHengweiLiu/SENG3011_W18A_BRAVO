@@ -4,7 +4,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 // Initialize the S3 client
 const s3Client = new S3Client({
-  region: "us-east-1",
+  region: process.env.AWS_REGION || "us-east-1",
 });
 
 const scrapeData = async () => {
@@ -48,11 +48,33 @@ const scrapeData = async () => {
       }
     });
 
-    const jsonData = { data: tableRows };
+    // ADAGE 3.0 data model format
+    const now = new Date()
+    const dateString = now.toISOString().split('T')[0] // YYYY-MM-DD
+    const timestamp = now.toISOString()
+
+    const jsonData = {
+      data_source: 'Yahoo Sports',
+      dataset_type: 'NBA Team Statistics',
+      dataset_id: `${process.env.S3_BUCKET_NAME}/${process.env.S3_FILE_PREFIX}/${dateString}/data.json`,
+      time_object: {
+        timestamp: timestamp,
+        timezone: 'UTC'
+      },
+      events: tableRows.map(team => ({
+        time_object: {
+          timestamp: timestamp,
+          duration: 1,
+          duration_unit: 'day',
+          timezone: 'UTC'
+        },
+        event_type: 'team_statistics',
+        attributes: team
+      }))
+    }
 
     // Upload to S3
-    const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    const key = `${process.env.S3_FILE_PREFIX}/${date}/data.json`;
+    const key = `${process.env.S3_FILE_PREFIX}/${dateString}/data.json`;
     await uploadToS3(jsonData, process.env.S3_BUCKET_NAME, key);
 
     return {

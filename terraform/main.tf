@@ -29,7 +29,7 @@ provider "aws" {
 
 # S3 Bucket
 resource "aws_s3_bucket" "nba_prediction_bucket" {
-  bucket = "nba-prediction-bucket-seng3011" # Replace with a unique name
+  bucket = "nba-prediction-bucket-seng3011"
 }
 
 # Disable ACLs and enforce bucket owner enforced
@@ -104,13 +104,13 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 
 # Lambda Function for Data Collection
 resource "aws_lambda_function" "nba_scraper_lambda" {
-  function_name = "nba-scraper-lambda-${local.current_env.name_prefix}"
+  function_name = "nba-scraper-lambda${local.name_suffix}"
   handler       = "data-collect.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-transform-${local.current_env.name_prefix}.zip"
-  source_code_hash = filebase64sha256("lambda-deployment-package-transform-${local.current_env.name_prefix}.zip")
+  filename         = "lambda-deployment-package-collect${local.name_suffix}.zip"
+  source_code_hash = filebase64sha256("lambda-deployment-package-collect${local.name_suffix}.zip")
 
   environment {
     variables = {
@@ -124,13 +124,13 @@ resource "aws_lambda_function" "nba_scraper_lambda" {
 
 # Lambda Function for Data Retrieval
 resource "aws_lambda_function" "nba_retriever_lambda" {
-  function_name = "nba-retriever-lambda-${local.current_env.name_prefix}"
+  function_name = "nba-retriever-lambda${local.name_suffix}"
   handler       = "data-retrieve.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-retrieve-${local.current_env.name_prefix}.zip"
-  source_code_hash = filebase64sha256("lambda-deployment-package-retrieve-${local.current_env.name_prefix}.zip")
+  filename         = "lambda-deployment-package-retrieve${local.name_suffix}.zip"
+  source_code_hash = filebase64sha256("lambda-deployment-package-retrieve${local.name_suffix}.zip")
 
   environment {
     variables = {
@@ -142,20 +142,20 @@ resource "aws_lambda_function" "nba_retriever_lambda" {
 
 # Lambda Function for Data Analysis
 resource "aws_lambda_function" "nba_analyse_lambda" {
-  function_name = "nba-analyse-lambda-${local.current_env.name_prefix}"
+  function_name = "nba-analyse-lambda${local.name_suffix}"
   handler       = "team-analyse.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-analyse-${local.current_env.name_prefix}.zip"
-  source_code_hash = filebase64sha256("lambda-deployment-package-analyse-${local.current_env.name_prefix}.zip")
+  filename         = "lambda-deployment-package-analyse${local.name_suffix}.zip"
+  source_code_hash = filebase64sha256("lambda-deployment-package-analyse${local.name_suffix}.zip")
 
   timeout = 30
 }
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "nba_prediction_api" {
-  name        = "nba-prediction-api"
+  name        = "nba-prediction-api${local.is_dev ? "-dev" : ""}"
   description = "API Gateway for NBA Prediction Lambda"
 }
 
