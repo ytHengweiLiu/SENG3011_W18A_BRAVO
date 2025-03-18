@@ -76,9 +76,9 @@ jobs:
           cd ../analytical-model
           zip -r ../../terraform/lambda-deployment-package-analyse.zip .
           
-      # Archive the packages as artifacts so they can be used in the CD job
+      # Archive the packages as artifacts using v4
       - name: Archive Lambda deployment packages
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lambda-packages
           path: |
