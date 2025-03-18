@@ -121,6 +121,6 @@ const uploadToS3 = async (jsonData, bucketName, key) => {
 };
 
 // Lambda handler function
-exports.handler = async (event) => {
+exports.handler = async () => {
   return await scrapeData();
 };

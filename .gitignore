@@ -30,3 +30,11 @@ logs
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+# Testing
+coverage/
+*/coverage/
+**/coverage/
+.nyc_output/
+*/.nyc_output/
+**/.nyc_output/

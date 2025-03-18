@@ -147,7 +147,7 @@ const calculateWinProbability = statDifferences => {
   return { team1Probability, team2Probability }
 }
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   try {
     console.log("Request received:", JSON.stringify(event));
     const bodyParams = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
