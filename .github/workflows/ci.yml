@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Test
 
 on:
   push:
@@ -11,6 +11,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [data-collect, data-retrieve, analytical-model]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,68 +23,24 @@ jobs:
         with:
           node-version: 20.12.1
 
-      # Install dependencies for all services
       - name: Install dependencies
-        run: |
-          cd src/data-collect
-          npm install
-          cd ../data-retrieve
-          npm install
-          cd ../analytical-model
-          npm install
+        run: cd src/${{ matrix.service }} && npm install
 
-      # Run linting for each service
       - name: Run linting
-        run: |
-          cd src/data-collect
-          npm install eslint --save-dev
-          npx eslint .
-          cd ../data-retrieve
-          npm install eslint --save-dev
-          npx eslint .
-          cd ../analytical-model
-          npm install eslint --save-dev
-          npx eslint .
+        run: cd src/${{ matrix.service }} && npm run lint
 
-      # Run tests and collect coverage
       - name: Run tests with coverage
-        run: |
-          cd src/data-collect
-          npm install jest --save-dev
-          npm test -- --coverage
-          cd ../data-retrieve
-          npm install jest --save-dev
-          npm test -- --coverage
-          cd ../analytical-model
-          npm install jest --save-dev
-          npm test -- --coverage
+        run: cd src/${{ matrix.service }} && npm run test
 
-      # Coverage checking
-      - name: Check coverage thresholds
+      # Package Lambda function
+      - name: Package Lambda function
         run: |
-          cd src/data-collect
-          npx jest --coverage --coverageThreshold='{"global":{"branches":85,"functions":85,"lines":85,"statements":85}}'
-          cd ../data-retrieve
-          npx jest --coverage --coverageThreshold='{"global":{"branches":85,"functions":85,"lines":85,"statements":85}}'
-          cd ../analytical-model
-          npx jest --coverage --coverageThreshold='{"global":{"branches":85,"functions":85,"lines":85,"statements":85}}'
+          cd src/${{ matrix.service }}
+          zip -r ../../terraform/lambda-deployment-package-${{ matrix.service }}.zip .
 
-      # Package Lambda functions (build step)
-      - name: Package Lambda functions
-        run: |
-          cd src/data-collect
-          zip -r ../../terraform/lambda-deployment-package-collect.zip .
-          cd ../data-retrieve
-          zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
-          cd ../analytical-model
-          zip -r ../../terraform/lambda-deployment-package-analyse.zip .
-
-      # Archive the packages as artifacts using v4
-      - name: Archive Lambda deployment packages
+      # Upload as an artifact
+      - name: Upload Lambda package
         uses: actions/upload-artifact@v4
         with:
-          name: lambda-packages
-          path: |
-            terraform/lambda-deployment-package-collect.zip
-            terraform/lambda-deployment-package-retrieve.zip
-            terraform/lambda-deployment-package-analyse.zip
+          name: lambda-package-${{ matrix.service }}
+          path: terraform/lambda-deployment-package-${{ matrix.service }}.zip

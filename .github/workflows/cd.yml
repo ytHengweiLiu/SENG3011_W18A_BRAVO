@@ -15,33 +15,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Download the Lambda packages from the CI workflow
+      # Download all Lambda packages from the CI workflow
       - name: Download Lambda packages
-        uses: actions/github-script@v6
+        uses: actions/download-artifact@v4
         with:
-          script: |
-            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: ${{ github.event.workflow_run.id }}
-            });
-            const matchArtifact = artifacts.data.artifacts.find(artifact => artifact.name === 'lambda-packages');
-            if (!matchArtifact) {
-              throw new Error('No matching artifact found');
-            }
-            const download = await github.rest.actions.downloadArtifact({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              artifact_id: matchArtifact.id,
-              archive_format: 'zip'
-            });
-            const fs = require('fs');
-            fs.writeFileSync('lambda-packages.zip', Buffer.from(download.data));
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          name: lambda-package-*
+          path: terraform/
 
-      - name: Extract Lambda packages
-        run: |
-          unzip lambda-packages.zip -d terraform/
-          ls -la terraform/
+      - name: List downloaded packages
+        run: ls -la terraform/
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -62,6 +46,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' # Only deploy on main branch
         run: |
           cd terraform
           terraform apply -auto-approve
