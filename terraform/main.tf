@@ -151,6 +151,12 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
   source_code_hash = filebase64sha256("lambda-deployment-package-analyse${local.name_suffix}.zip")
 
   timeout = 30
+
+  environment {
+    variables = {
+      DATA_RETRIEVAL_API = local.environment == "dev" ? "https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/prod/retrieve-dev" : "https://szzotav54l.execute-api.us-east-1.amazonaws.com/prod/retrieve"
+    }
+  }
 }
 
 # API Gateway

@@ -3,7 +3,7 @@ const https = require('https')
 // May need to change API endpoint
 const DATA_RETRIEVAL_API =
   process.env.DATA_RETRIEVAL_API ||
-  'https://szzotav54l.execute-api.us-east-1.amazonaws.com/prod/retrieve' // Fallback for local testing
+  'https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/prod/retrieve-dev' // Fallback for local testing
 
 const fetchFromDataRetrievalApi = async () => {
   return new Promise((resolve, reject) => {
@@ -60,13 +60,26 @@ const fetchFromDataRetrievalApi = async () => {
 }
 
 const findTeamData = (allTeams, teamName) => {
-  // Find the team in the data array
-  return allTeams.find(
-    team =>
-      team.attributes &&
-      team.attributes.Team &&
-      team.attributes.Team.toLowerCase() === teamName.toLowerCase()
-  )
+  if (!allTeams || !allTeams.events || !Array.isArray(allTeams.events)) {
+    console.error('Invalid ADAGE data structure:', JSON.stringify(allTeams));
+    return null;
+  }
+
+  // Find the team in the events array
+  return allTeams.events.find(
+    event =>
+      event.attributes &&
+      event.attributes.Team &&
+      event.attributes.Team.toLowerCase() === teamName.toLowerCase()
+  );
+
+  // // Find the team in the data array
+  // return allTeams.find(
+  //   team =>
+  //     team.attributes &&
+  //     team.attributes.Team &&
+  //     team.attributes.Team.toLowerCase() === teamName.toLowerCase()
+  // )
 }
 
 const extractTeamStats = teamData => {
@@ -161,14 +174,14 @@ exports.handler = async (event, context) => {
     console.log(
       "API response structure:",
       JSON.stringify({
-        hasData: !!allTeamsResponse.data,
-        dataIsArray: Array.isArray(allTeamsResponse.data),
-        dataLength: Array.isArray(allTeamsResponse.data) ? allTeamsResponse.data.length : 0,
+        hasEvents: !!allTeamsResponse.events,
+        eventsIsArray: Array.isArray(allTeamsResponse.events),
+        eventsLength: Array.isArray(allTeamsResponse.events) ? allTeamsResponse.events.length : 0,
       })
     );
 
-    const team1Data = findTeamData(allTeamsResponse.data, team1);
-    const team2Data = findTeamData(allTeamsResponse.data, team2);
+    const team1Data = findTeamData(allTeamsResponse, team1);
+    const team2Data = findTeamData(allTeamsResponse, team2);
 
     if (!team1Data || !team2Data) {
       return {

@@ -69,7 +69,7 @@ const scrapeData = async () => {
           timezone: 'UTC'
         },
         event_type: 'team_statistics',
-        attributes: team
+        attributes: team.attributes || team
       }))
     }
 
