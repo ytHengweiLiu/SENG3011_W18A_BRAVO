@@ -39,7 +39,7 @@ const retrieveTodaysData = async () => {
 };
 
 // Lambda handler function
-exports.handler = async (event) => {
+exports.handler = async () => {
   try {
     // Retrieve the latest data from S3
     const data = await retrieveTodaysData();
