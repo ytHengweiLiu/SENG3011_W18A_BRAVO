@@ -148,10 +148,11 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
   filename         = "lambda-deployment-package-analyse${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-analyse${local.name_suffix}.zip")
 
-  timeout = 29 # AWS API Gateway limit
+  timeout = 29
 
   environment {
     variables = {
+      # TODO: fix URLs
       DATA_RETRIEVAL_API = local.environment == "dev" ? "https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/prod/retrieve-dev" : "https://szzotav54l.execute-api.us-east-1.amazonaws.com/prod/retrieve"
     }
   }
@@ -159,7 +160,7 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "nba_prediction_api" {
-  name        = "nba-prediction-api${local.name_suffix}"
+  name        = "nba-prediction-api${local.name_suffix}" # name in API Gateway
   description = "API Gateway for NBA Prediction Lambda"
 }
 
@@ -379,6 +380,49 @@ resource "aws_api_gateway_integration_response" "retrieve_options_integration_re
   }
 }
 
+# Analyse method response (for CORS)
+resource "aws_api_gateway_method_response" "analyse_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_method.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+# Integration response
+resource "aws_api_gateway_integration_response" "analyse_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_method.http_method
+  status_code = aws_api_gateway_method_response.analyse_method_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
+  }
+
+  # This is needed to match the AWS_PROXY integration
+  response_templates = {
+    "application/json" = ""
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.analyse_integration,
+    aws_api_gateway_method_response.analyse_method_response
+  ]
+}
+
+# Add OPTIONS method for CORS preflight requests
 resource "aws_api_gateway_method" "analyse_options_method" {
   rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
   resource_id   = aws_api_gateway_resource.analyse.id
@@ -386,23 +430,25 @@ resource "aws_api_gateway_method" "analyse_options_method" {
   authorization = "NONE"
 }
 
+# Mock integration for OPTIONS method
 resource "aws_api_gateway_integration" "analyse_options_integration" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   resource_id = aws_api_gateway_resource.analyse.id
   http_method = aws_api_gateway_method.analyse_options_method.http_method
   type        = "MOCK"
-  
+
   request_templates = {
     "application/json" = "{\"statusCode\": 200}"
   }
 }
 
+# Method response for OPTIONS
 resource "aws_api_gateway_method_response" "analyse_options_200" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   resource_id = aws_api_gateway_resource.analyse.id
   http_method = aws_api_gateway_method.analyse_options_method.http_method
   status_code = "200"
-  
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = true,
     "method.response.header.Access-Control-Allow-Methods" = true,
@@ -410,12 +456,13 @@ resource "aws_api_gateway_method_response" "analyse_options_200" {
   }
 }
 
+# Integration response for OPTIONS
 resource "aws_api_gateway_integration_response" "analyse_options_integration_response" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   resource_id = aws_api_gateway_resource.analyse.id
   http_method = aws_api_gateway_method.analyse_options_method.http_method
   status_code = aws_api_gateway_method_response.analyse_options_200.status_code
-  
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
     "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'",
@@ -429,7 +476,11 @@ resource "aws_api_gateway_deployment" "nba_prediction_deployment" {
   depends_on = [
     aws_api_gateway_integration.scrape_integration,
     aws_api_gateway_integration.retrieve_integration,
-    aws_api_gateway_integration.analyse_integration
+    aws_api_gateway_integration.analyse_integration,
+    aws_api_gateway_integration_response.analyse_integration_response,
+    aws_api_gateway_integration_response.scrape_options_integration_response,
+    aws_api_gateway_integration_response.retrieve_options_integration_response,
+    aws_api_gateway_integration_response.analyse_options_integration_response
   ]
 }
 
