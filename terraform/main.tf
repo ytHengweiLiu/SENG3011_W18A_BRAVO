@@ -1,11 +1,33 @@
+locals {
+  environment = terraform.workspace
+  is_dev      = local.environment == "dev"
+
+  name_suffix = local.environment == "default" ? "" : "-${local.environment}"
+
+  # Environment-specific settings
+  env_settings = {
+    default = {
+      name_prefix    = "prod"
+      s3_file_prefix = "nba-stats"
+      schedule       = "cron(0 12 * * ? *)" # Daily at 12:00 PM UTC
+    }
+    dev = {
+      name_prefix    = "dev"
+      s3_file_prefix = "nba-stats-dev"
+      schedule       = "cron(0 13 * * ? *)" # Daily at 1:00 PM UTC (to avoid conflicts)
+    }
+  }
+  env_config = local.env_settings[local.environment]
+}
+
 # Provider Configuration
 provider "aws" {
-  region = "us-east-1"  # Replace with your preferred region
+  region = "us-east-1"
 }
 
 # S3 Bucket
 resource "aws_s3_bucket" "nba_prediction_bucket" {
-  bucket = "nba-prediction-bucket-seng3011"  # Replace with a unique name
+  bucket = "nba-prediction-bucket-seng3011"
 }
 
 # Disable ACLs and enforce bucket owner enforced
@@ -29,7 +51,7 @@ resource "aws_s3_bucket_public_access_block" "nba_prediction_bucket_public_acces
 
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_exec_role" {
-  name = "lambda_exec_role"
+  name = "lambda_exec_role${local.name_suffix}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -47,9 +69,9 @@ resource "aws_iam_role" "lambda_exec_role" {
 
 # IAM Policy for Lambda to access S3
 resource "aws_iam_policy" "lambda_s3_access_policy" {
-  name        = "LambdaS3AccessPolicy"
+  name        = "LambdaS3AccessPolicy${local.name_suffix}"
   description = "Allow Lambda to access S3 bucket"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -80,58 +102,65 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 
 # Lambda Function for Data Collection
 resource "aws_lambda_function" "nba_scraper_lambda" {
-  function_name = "nba-scraper-lambda"
+  function_name = "nba-scraper-lambda${local.name_suffix}"
   handler       = "data-collect.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-collect.zip"
-  source_code_hash = filebase64sha256("lambda-deployment-package-collect.zip")
+  filename         = "lambda-deployment-package-collect${local.name_suffix}.zip"
+  source_code_hash = filebase64sha256("lambda-deployment-package-collect${local.name_suffix}.zip")
 
   environment {
     variables = {
       S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
-      S3_FILE_PREFIX = "nba-stats"
+      S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
 
-  timeout     = 45
+  timeout = 29
 }
 
 # Lambda Function for Data Retrieval
 resource "aws_lambda_function" "nba_retriever_lambda" {
-  function_name = "nba-retriever-lambda"
+  function_name = "nba-retriever-lambda${local.name_suffix}"
   handler       = "data-retrieve.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-retrieve.zip"
-  source_code_hash = filebase64sha256("lambda-deployment-package-retrieve.zip")
+  filename         = "lambda-deployment-package-retrieve${local.name_suffix}.zip"
+  source_code_hash = filebase64sha256("lambda-deployment-package-retrieve${local.name_suffix}.zip")
 
   environment {
     variables = {
       S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
-      S3_FILE_PREFIX = "nba-stats"
+      S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
 }
 
 # Lambda Function for Data Analysis
 resource "aws_lambda_function" "nba_analyse_lambda" {
-  function_name = "nba-analyse-lambda"
+  function_name = "nba-analyse-lambda${local.name_suffix}"
   handler       = "team-analyse.handler"
   runtime       = "nodejs18.x"
   role          = aws_iam_role.lambda_exec_role.arn
 
-  filename         = "lambda-deployment-package-analyse.zip"
-  source_code_hash = filebase64sha256("lambda-deployment-package-analyse.zip")
+  filename         = "lambda-deployment-package-analyse${local.name_suffix}.zip"
+  source_code_hash = filebase64sha256("lambda-deployment-package-analyse${local.name_suffix}.zip")
 
-  timeout     = 30
+  timeout = 29
+
+  environment {
+    variables = {
+      # TODO: fix URLs
+      DATA_RETRIEVAL_API = local.environment == "dev" ? "https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/prod/retrieve-dev" : "https://szzotav54l.execute-api.us-east-1.amazonaws.com/prod/retrieve"
+    }
+  }
 }
 
 # API Gateway
 resource "aws_api_gateway_rest_api" "nba_prediction_api" {
-  name        = "nba-prediction-api"
+  name        = "nba-prediction-api${local.name_suffix}" # name in API Gateway
   description = "API Gateway for NBA Prediction Lambda"
 }
 
@@ -139,7 +168,7 @@ resource "aws_api_gateway_rest_api" "nba_prediction_api" {
 resource "aws_api_gateway_resource" "scrape" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "scrape"
+  path_part   = "scrape${local.name_suffix}"
 }
 
 # API Gateway Method for Scrape
@@ -165,7 +194,7 @@ resource "aws_api_gateway_integration" "scrape_integration" {
 resource "aws_api_gateway_resource" "retrieve" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "retrieve"
+  path_part   = "retrieve${local.name_suffix}"
 }
 
 # API Gateway Method for Retrieve
@@ -191,7 +220,7 @@ resource "aws_api_gateway_integration" "retrieve_integration" {
 resource "aws_api_gateway_resource" "analyse" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
   parent_id   = aws_api_gateway_rest_api.nba_prediction_api.root_resource_id
-  path_part   = "analyse"
+  path_part   = "analyse${local.name_suffix}"
 }
 
 # API Gateway Method for Team Analysis
@@ -292,33 +321,151 @@ resource "aws_api_gateway_integration_response" "scrape_options_integration_resp
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# API Gateway Method for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_method" "retrieve_options_method" {
+  rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id   = aws_api_gateway_resource.retrieve.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# API Gateway Integration for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_integration" "retrieve_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.retrieve.id
+  http_method = aws_api_gateway_method.retrieve_options_method.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
+  }
+}
+
+# API Gateway Method Response for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_method_response" "retrieve_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.retrieve.id
+  http_method = aws_api_gateway_method.retrieve_options_method.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+# API Gateway Integration Response for OPTIONS (CORS) - Retrieve endpoint
+resource "aws_api_gateway_integration_response" "retrieve_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.retrieve.id
+  http_method = aws_api_gateway_method.retrieve_options_method.http_method
+  status_code = aws_api_gateway_method_response.retrieve_options_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
     "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
+}
+# Add OPTIONS method for CORS preflight requests
+resource "aws_api_gateway_method" "analyse_options_method" {
+  rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id   = aws_api_gateway_resource.analyse.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# Mock integration for OPTIONS method
+resource "aws_api_gateway_integration" "analyse_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_options_method.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+# Method response for OPTIONS
+resource "aws_api_gateway_method_response" "analyse_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_options_method.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+# Integration response
+resource "aws_api_gateway_integration_response" "analyse_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
+  resource_id = aws_api_gateway_resource.analyse.id
+  http_method = aws_api_gateway_method.analyse_options_method.http_method
+  status_code = aws_api_gateway_method_response.analyse_method_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
+  }
+
+  # This is needed to match the AWS_PROXY integration
+  response_templates = {
+    "application/json" = ""
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.analyse_integration,
+    aws_api_gateway_method_response.analyse_method_response
+  ]
 }
 
 # API Gateway Deployment
 resource "aws_api_gateway_deployment" "nba_prediction_deployment" {
   rest_api_id = aws_api_gateway_rest_api.nba_prediction_api.id
-  depends_on  = [
+  depends_on = [
     aws_api_gateway_integration.scrape_integration,
     aws_api_gateway_integration.retrieve_integration,
-    aws_api_gateway_integration.analyse_integration
+    aws_api_gateway_integration.analyse_integration,
+    aws_api_gateway_integration_response.scrape_options_integration_response,
+    aws_api_gateway_integration_response.retrieve_options_integration_response,
+    aws_api_gateway_integration_response.analyse_options_integration_response
   ]
 }
 
 # API Gateway Stage
 resource "aws_api_gateway_stage" "nba_prediction_stage" {
-  stage_name    = "prod"
+  stage_name    = local.environment == "default" ? "prod" : local.environment
   rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
   deployment_id = aws_api_gateway_deployment.nba_prediction_deployment.id
 }
 
 # CloudWatch Event Rule to trigger the scraper function daily
 resource "aws_cloudwatch_event_rule" "daily_scraper_trigger" {
-  name                = "daily-scraper-trigger"
-  description         = "Trigger the NBA scraper Lambda function daily"
-  schedule_expression = "cron(0 12 * * ? *)"  # Runs daily at 12:00 PM UTC
+  name                = "daily-scraper-trigger${local.name_suffix}"
+  description         = "Trigger the NBA scraper Lambda function daily (${local.environment})"
+  schedule_expression = local.env_config.schedule
 }
 
 # CloudWatch Event Target to invoke the scraper Lambda function
@@ -343,5 +490,5 @@ output "lambda_arn" {
 }
 
 output "api_url" {
-  value = "${aws_api_gateway_deployment.nba_prediction_deployment.invoke_url}/${aws_api_gateway_stage.nba_prediction_stage.stage_name}"
+  value = aws_api_gateway_stage.nba_prediction_stage.invoke_url
 }

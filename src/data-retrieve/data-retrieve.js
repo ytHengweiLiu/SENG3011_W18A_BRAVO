@@ -2,7 +2,7 @@ const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 
 // Initialize the S3 client
 const s3Client = new S3Client({
-  region: "us-east-1",  // Replace with your AWS region
+  region: process.env.AWS_REGION || "us-east-1",
 });
 
 // Function to retrieve data from S3
@@ -22,6 +22,10 @@ const retrieveDataFromS3 = async (bucketName, key) => {
 
     // Parse the JSON data
     const jsonData = JSON.parse(data);
+
+    if (!(jsonData.data_source && jsonData.dataset_type && jsonData.events)) {
+      console.error("Error: Data not in ADAGE 3.0 format");
+    }
     return jsonData;
   } catch (error) {
     console.error("Error retrieving data from S3:", error);

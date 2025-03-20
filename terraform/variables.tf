@@ -4,6 +4,12 @@ variable "aws_access_key_id" {
   sensitive   = true
 }
 
+variable "aws_region" {
+  description = "The AWS region to deploy resources in"
+  type        = string
+  default     = "us-east-1"
+}
+
 variable "aws_secret_access_key" {
   description = "AWS Secret Access Key"
   type        = string
