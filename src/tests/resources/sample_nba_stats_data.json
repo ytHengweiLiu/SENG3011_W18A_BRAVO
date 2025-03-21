@@ -1,0 +1,131 @@
+{
+  "data_source": "Yahoo Sports",
+  "dataset_type": "NBA Team Statistics",
+  "dataset_id": "test-bucket/nba-stats/2025-03-21/data.json",
+  "time_object": {
+    "timestamp": "2025-03-21T12:00:00Z",
+    "timezone": "UTC"
+  },
+  "events": [
+    {
+      "time_object": {
+        "timestamp": "2025-03-21T12:00:00Z",
+        "duration": 1,
+        "duration_unit": "day",
+        "timezone": "UTC"
+      },
+      "event_type": "team_statistics",
+      "attributes": {
+        "Team": "Boston Celtics",
+        "GP": "82",
+        "PPG": "120.5",
+        "FG%": "48.9",
+        "3P%": "38.8",
+        "FT%": "82.3",
+        "ORPG": "9.8",
+        "DRPG": "34.5",
+        "RPG": "44.3",
+        "APG": "26.8",
+        "SPG": "7.2",
+        "BPG": "5.6",
+        "TOV": "12.7"
+      }
+    },
+    {
+      "time_object": {
+        "timestamp": "2025-03-21T12:00:00Z",
+        "duration": 1,
+        "duration_unit": "day",
+        "timezone": "UTC"
+      },
+      "event_type": "team_statistics",
+      "attributes": {
+        "Team": "Indiana Pacers",
+        "GP": "82",
+        "PPG": "123.3",
+        "FG%": "50.1",
+        "3P%": "37.4",
+        "FT%": "79.5",
+        "ORPG": "10.2",
+        "DRPG": "31.8",
+        "RPG": "42.0",
+        "APG": "30.9",
+        "SPG": "7.0",
+        "BPG": "5.2",
+        "TOV": "13.9"
+      }
+    },
+    {
+      "time_object": {
+        "timestamp": "2025-03-21T12:00:00Z",
+        "duration": 1,
+        "duration_unit": "day",
+        "timezone": "UTC"
+      },
+      "event_type": "team_statistics",
+      "attributes": {
+        "Team": "Milwaukee Bucks",
+        "GP": "82",
+        "PPG": "119.7",
+        "FG%": "49.2",
+        "3P%": "38.2",
+        "FT%": "80.4",
+        "ORPG": "10.0",
+        "DRPG": "33.5",
+        "RPG": "43.5",
+        "APG": "25.7",
+        "SPG": "7.5",
+        "BPG": "5.3",
+        "TOV": "13.1"
+      }
+    },
+    {
+      "time_object": {
+        "timestamp": "2025-03-21T12:00:00Z",
+        "duration": 1,
+        "duration_unit": "day",
+        "timezone": "UTC"
+      },
+      "event_type": "team_statistics",
+      "attributes": {
+        "Team": "Denver Nuggets",
+        "GP": "82",
+        "PPG": "114.9",
+        "FG%": "49.5",
+        "3P%": "37.5",
+        "FT%": "81.2",
+        "ORPG": "9.6",
+        "DRPG": "33.1",
+        "RPG": "42.7",
+        "APG": "29.2",
+        "SPG": "7.3",
+        "BPG": "4.5",
+        "TOV": "12.5"
+      }
+    },
+    {
+      "time_object": {
+        "timestamp": "2025-03-21T12:00:00Z",
+        "duration": 1,
+        "duration_unit": "day",
+        "timezone": "UTC"
+      },
+      "event_type": "team_statistics",
+      "attributes": {
+        "Team": "Los Angeles Lakers",
+        "GP": "82",
+        "PPG": "117.2",
+        "FG%": "49.1",
+        "3P%": "35.3",
+        "FT%": "78.9",
+        "ORPG": "10.5",
+        "DRPG": "33.7",
+        "RPG": "44.2",
+        "APG": "27.1",
+        "SPG": "7.8",
+        "BPG": "5.1",
+        "TOV": "13.8"
+      }
+    }
+  ]
+}
