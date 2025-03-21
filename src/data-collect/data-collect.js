@@ -121,6 +121,14 @@ const uploadToS3 = async (jsonData, bucketName, key) => {
 };
 
 // Lambda handler function
-exports.handler = async () => {
+const handler = async () => {
   return await scrapeData();
+};
+
+exports.handler = handler;
+
+module.exports = {
+  handler,
+  uploadToS3,
+  scrapeData
 };
