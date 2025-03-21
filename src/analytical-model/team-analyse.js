@@ -2,7 +2,8 @@ const https = require('https')
 
 // May need to change API endpoint
 const DATA_RETRIEVAL_API =
-  'https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/dev/retrieve-dev'
+'https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/retrieve/'
+// 'https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/dev/retrieve-dev'
 // process.env.DATA_RETRIEVAL_API
 
 const fetchFromDataRetrievalApi = async () => {
@@ -148,7 +149,7 @@ const calculateWinProbability = statDifferences => {
   return { team1Probability, team2Probability }
 }
 
-exports.handler = async event => {
+const handler = async event => {
   try {
     console.log('Request received:', JSON.stringify(event))
     let team1, team2
@@ -289,3 +290,14 @@ exports.handler = async event => {
     }
   }
 }
+
+exports.handler = handler;
+
+module.exports = {
+  handler,
+  findTeamData,
+  extractTeamStats,
+  compareTeamStats,
+  calculateWinProbability,
+  fetchFromDataRetrievalApi
+};
