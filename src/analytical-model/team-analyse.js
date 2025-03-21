@@ -149,7 +149,7 @@ const calculateWinProbability = statDifferences => {
   return { team1Probability, team2Probability }
 }
 
-exports.handler = async event => {
+const handler = async event => {
   try {
     console.log('Request received:', JSON.stringify(event))
     let team1, team2
@@ -290,3 +290,14 @@ exports.handler = async event => {
     }
   }
 }
+
+exports.handler = handler;
+
+module.exports = {
+  handler,
+  findTeamData,
+  extractTeamStats,
+  compareTeamStats,
+  calculateWinProbability,
+  fetchFromDataRetrievalApi
+};
