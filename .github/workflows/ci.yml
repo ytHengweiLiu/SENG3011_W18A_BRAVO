@@ -73,10 +73,12 @@ jobs:
           fi
 
       # Convert MD to PDF
-      - name: Install md-to-pdf
-        run: npm install -g md-to-pdf
-      - name: Convert report to PDF
-        run: md-to-pdf test-report-${{ matrix.service }}.md
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Convert combined report to PDF
+        run: |
+          pandoc combined-test-report.md -o combined-test-report.pdf
 
       # Upload test report as artifact
       - name: Upload test report
