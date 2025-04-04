@@ -35,7 +35,7 @@ jobs:
         run: cd src/${{ matrix.service }} && npm run typecheck
 
       - name: Run tests with coverage
-        run: cd src/${{ matrix.service }} && npm run test -- --json --outputFile=../../test-results.json
+        run: cd src/${{ matrix.service }} && npm run test -- --json --outputFile=../../test-results.json --coverage
 
       # - name: Install dependencies
       #   run: cd src/tests/e2eTest && npm install
@@ -49,14 +49,14 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
-      - name: Check if coverage file exists
+      # Extract coverage from test output
+      - name: Extract coverage from test output
+        id: extract_coverage
         run: |
-          if [ -f "./coverage/coverage-summary.json" ]; then
-            echo "Coverage file found."
-          else
-            echo "Coverage file not found."
-            exit 1
-          fi
+          cd src/${{ matrix.service }}
+          COVERAGE=$(grep -A 5 "Coverage summary" ../../test-results.json | grep "Statements" | sed -E 's/.*Statements\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Coverage extracted: $COVERAGE%"
 
       # Generate test report
       - name: Generate test report
@@ -73,7 +73,7 @@ jobs:
             node -e "const data = require('../../test-results.json'); console.log(\`- Total Tests: \${data.numTotalTests}\`)" >> ../../test-report-${{ matrix.service }}.md
             node -e "const data = require('../../test-results.json'); console.log(\`- Passed Tests: \${data.numPassedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
             node -e "const data = require('../../test-results.json'); console.log(\`- Failed Tests: \${data.numFailedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../coverage/coverage-summary.json'); console.log(\`- Test Coverage: \${data.total.statements.pct}%\`)"
+            echo "- Test Coverage: ${{ steps.extract_coverage.outputs.coverage }}%" >> ../../test-report-${{ matrix.service }}.md
 
             echo "" >> ../../test-report-${{ matrix.service }}.md
             echo "### Failed Tests" >> ../../test-report-${{ matrix.service }}.md
