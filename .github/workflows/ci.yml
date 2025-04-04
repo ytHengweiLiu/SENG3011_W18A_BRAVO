@@ -49,6 +49,15 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
+      - name: Check if coverage file exists
+        run: |
+          if [ -f "../../coverage/coverage-summary.json" ]; then
+            echo "Coverage file found."
+          else
+            echo "Coverage file not found."
+            exit 1
+          fi
+
       # Generate test report
       - name: Generate test report
         run: |
