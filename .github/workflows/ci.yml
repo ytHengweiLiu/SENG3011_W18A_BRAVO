@@ -49,11 +49,70 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
-      - name: Publish Test Report
-        uses: ctrf-io/github-test-reporter@v1
+      - name: Install Puppeteer and pdf-lib
+        run: npm install puppeteer pdf-lib
+
+      - name: Convert HTML coverage to PDF
+        run: |
+          node <<EOF
+          const puppeteer = require('puppeteer');
+          const fs = require('fs');
+          const path = require('path');
+
+          async function convertHTMLToPDF() {
+            // Launch browser
+            const browser = await puppeteer.launch();
+            const page = await browser.newPage();
+            
+            // Path to the index.html file
+            const coverageIndexPath = path.join(process.cwd(), 'coverage/lcov-report/index.html');
+            
+            // Check if the file exists
+            if (!fs.existsSync(coverageIndexPath)) {
+              console.error('Coverage report not found at:', coverageIndexPath);
+              process.exit(1);
+            }
+            
+            // Load the coverage report
+            await page.goto('file://' + coverageIndexPath);
+            
+            // Create PDF output directory if it doesn't exist
+            const pdfDir = path.join(process.cwd(), 'coverage-pdf');
+            if (!fs.existsSync(pdfDir)) {
+              fs.mkdirSync(pdfDir);
+            }
+            
+            // Generate PDF
+            await page.pdf({
+              path: path.join(pdfDir, 'coverage-report.pdf'),
+              format: 'A4',
+              printBackground: true,
+              margin: {
+                top: '20px',
+                right: '20px',
+                bottom: '20px',
+                left: '20px'
+              }
+            });
+            
+            console.log('PDF generated successfully');
+            
+            // Close browser
+            await browser.close();
+          }
+
+          convertHTMLToPDF().catch(err => {
+            console.error('Error generating PDF:', err);
+            process.exit(1);
+          });
+          EOF
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v3
         with:
-          report-path: './ctrf/*.json'
-        if: always()
+          name: coverage-report
+          path: coverage-pdf/${{ matrix.service }}coverage-report.pdf
+          retention-days: 90
 
       # Package Lambda function
       - name: Package Lambda function
