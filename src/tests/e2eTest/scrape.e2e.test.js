@@ -1,3 +1,5 @@
+// This test suite only includes success tests since the Lambda function doesn't take any input.
+
 const axios = require("axios");
 require("dotenv").config();
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");

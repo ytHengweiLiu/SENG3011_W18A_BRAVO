@@ -1,3 +1,5 @@
+// This test suite only includes success tests since the Lambda function doesn't take any input.
+
 const axios = require("axios");
 
 const COLLECT_API_URL = "https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/scrape";
