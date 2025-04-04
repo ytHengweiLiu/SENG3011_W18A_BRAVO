@@ -79,7 +79,7 @@ jobs:
             -var="s3_bucket_name=${{ secrets.S3_BUCKET_NAME }}" \
             -var="aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" \
             -var="aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-            -var="alert_email=${{ secrets.ALERT_EMAIL }}"
+            -var="alert_email=z5411219@ad.unsw.edu.com"
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
