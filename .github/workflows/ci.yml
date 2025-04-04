@@ -34,16 +34,23 @@ jobs:
       - name: Run typechecking
         run: cd src/${{ matrix.service }} && npm run typecheck
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage and generate report
         id: test_with_coverage
         run: |
           cd src/${{ matrix.service }}
+          # Add a script to package.json to save output to a file with a timestamp
+          node -e '
+            const fs = require("fs");
+            const pkg = require("./package.json");
+            if (!pkg.scripts.test_with_report) {
+              pkg.scripts.test_with_report = "jest --coverage | tee test-report.txt";
+              fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+            }
+          '
+          # Run tests and save output to a file
+          npm run test_with_report
           mkdir -p ../../test-reports
-          # Use jest-junit reporter to generate a structured report
-          npm i --save-dev jest-junit
-          JEST_JUNIT_OUTPUT_DIR=../../test-reports JEST_JUNIT_OUTPUT_NAME=junit-${{ matrix.service }}.xml npm run test -- --coverage --reporters=default --reporters=jest-junit || true
-          # Copy the coverage report to the reports directory
-          cp -r coverage ../../test-reports/coverage-${{ matrix.service }}
+          cp test-report.txt ../../test-reports/test-report-${{ matrix.service }}.txt
         continue-on-error: true
 
       # - name: Install dependencies
@@ -58,23 +65,21 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
-      # Generate a PDF report from coverage
-      - name: Generate PDF report
+      # Convert test report to PDF
+      - name: Convert test report to PDF
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y wkhtmltopdf
-          wkhtmltopdf test-reports/coverage-${{ matrix.service }}/lcov-report/index.html test-reports/test-report-${{ matrix.service }}.pdf
+          sudo apt-get update -q
+          sudo apt-get install -y enscript ghostscript
+          cd test-reports
+          enscript -B -r -f Courier10 -o - test-report-${{ matrix.service }}.txt | ps2pdf - test-report-${{ matrix.service }}.pdf
         continue-on-error: true
 
-      # Upload test report as artifact
+      # Upload test reports as artifacts
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports-${{ matrix.service }}
-          path: |
-            test-reports/junit-${{ matrix.service }}.xml
-            test-reports/test-report-${{ matrix.service }}.pdf
-            test-reports/coverage-${{ matrix.service }}/**
+          name: test-report-${{ matrix.service }}
+          path: test-reports/test-report-${{ matrix.service }}.*
           retention-days: 30
         if: always()
 
