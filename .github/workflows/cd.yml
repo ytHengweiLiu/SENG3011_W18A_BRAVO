@@ -21,10 +21,20 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
-          pattern: lambda-deployment-package-*
+          pattern: lambda-package-*
           path: terraform/
 
       - name: List downloaded packages
+        run: ls -la terraform/
+
+      - name: Rename downloaded packages
+        run: |
+          cd terraform
+          for file in lambda-package-*; do
+            mv "$file" "lambda-deployment-package-${file#lambda-package-}.zip"
+          done
+
+      - name: List renamed packages
         run: ls -la terraform/
 
       - name: Set up Terraform
