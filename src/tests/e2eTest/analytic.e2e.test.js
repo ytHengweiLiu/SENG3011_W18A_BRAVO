@@ -1,3 +1,5 @@
+// This test for analytic model includes successful case, missing parameters error case and invalid team names case. 
+
 const axios = require("axios");
 
 const ANALYSE_API_URL = "https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/analyse";
