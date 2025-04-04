@@ -15,13 +15,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Check CI Completion
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-success
+
       # Download all Lambda packages from the CI workflow
       - name: Download Lambda packages
         uses: actions/download-artifact@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
-          name: lambda-package-*
+          pattern: lambda-package-*
           path: terraform/
 
       - name: List downloaded packages
