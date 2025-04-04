@@ -64,7 +64,7 @@ jobs:
             node -e "const data = require('../../test-results.json'); console.log(\`- Total Tests: \${data.numTotalTests}\`)" >> ../../test-report-${{ matrix.service }}.md
             node -e "const data = require('../../test-results.json'); console.log(\`- Passed Tests: \${data.numPassedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
             node -e "const data = require('../../test-results.json'); console.log(\`- Failed Tests: \${data.numFailedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Test Coverage: \${data.coverageMap?.total?.statements?.pct || 'N/A'}%\`)" >> ../../test-report-${{ matrix.service }}.md
+            node -e "const data = require('../../coverage/coverage-summary.json'); console.log(\`- Test Coverage: \${data.total.statements.pct}%\`)"
 
             echo "" >> ../../test-report-${{ matrix.service }}.md
             echo "### Failed Tests" >> ../../test-report-${{ matrix.service }}.md

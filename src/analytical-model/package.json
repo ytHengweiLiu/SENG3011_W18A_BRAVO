@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "analytical-model.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --verbose --coverage --coverageReporters='json-summary' --coverageReporters='text-summary'",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
