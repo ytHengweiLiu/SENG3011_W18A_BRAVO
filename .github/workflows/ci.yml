@@ -3,10 +3,11 @@ name: Test
 on:
   push:
     branches:
-      - '*'
+      - "*"
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   test:
@@ -33,7 +34,7 @@ jobs:
         run: cd src/${{ matrix.service }} && npm run typecheck
 
       - name: Run tests with coverage
-        run: cd src/${{ matrix.service }} && npm run test
+        run: cd src/${{ matrix.service }} && npm run test -- --json --outputFile=../../test-results.json
 
       # - name: Install dependencies
       #   run: cd src/tests/e2eTest && npm install
@@ -46,6 +47,47 @@ jobs:
 
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
+
+      # Generate test report
+      - name: Generate test report
+        run: |
+          cd src/${{ matrix.service }}
+          echo "# Test Report for ${{ matrix.service }}" > ../../test-report-${{ matrix.service }}.md
+          echo "Date: $(date)" >> ../../test-report-${{ matrix.service }}.md
+          echo "Service: ${{ matrix.service }}" >> ../../test-report-${{ matrix.service }}.md
+          echo "" >> ../../test-report-${{ matrix.service }}.md
+          echo "## Test Results" >> ../../test-report-${{ matrix.service }}.md
+
+          if [ -f "../../test-results.json" ]; then
+            echo "### Summary" >> ../../test-report-${{ matrix.service }}.md
+            node -e "const data = require('../../test-results.json'); console.log(\`- Total Tests: \${data.numTotalTests}\`)" >> ../../test-report-${{ matrix.service }}.md
+            node -e "const data = require('../../test-results.json'); console.log(\`- Passed Tests: \${data.numPassedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
+            node -e "const data = require('../../test-results.json'); console.log(\`- Failed Tests: \${data.numFailedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
+            node -e "const data = require('../../test-results.json'); console.log(\`- Test Coverage: \${data.coverageMap?.total?.statements?.pct || 'N/A'}%\`)" >> ../../test-report-${{ matrix.service }}.md
+
+            echo "" >> ../../test-report-${{ matrix.service }}.md
+            echo "### Failed Tests" >> ../../test-report-${{ matrix.service }}.md
+            node -e "const data = require('../../test-results.json'); const failures = data.testResults?.filter(t => t.status === 'failed') || []; failures.forEach(f => { console.log(\`- \${f.name}: \${f.message || 'Failed'}\`); });" >> ../../test-report-${{ matrix.service }}.md
+          else
+            echo "No test results found" >> ../../test-report-${{ matrix.service }}.md
+          fi
+
+      # Convert MD to PDF
+      - name: Install md-to-pdf
+        run: npm install -g md-to-pdf
+      - name: Convert report to PDF
+        run: md-to-pdf test-report-${{ matrix.service }}.md
+
+      # Upload test report as artifact
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-${{ matrix.service }}
+          path: |
+            test-report-${{ matrix.service }}.md
+            test-report-${{ matrix.service }}.pdf
+          retention-days: 30
+        if: always()
 
       # Package Lambda function
       - name: Package Lambda function
@@ -60,7 +102,7 @@ jobs:
           name: lambda-package-${{ matrix.service }}
           path: terraform/lambda-deployment-package-${{ matrix.service }}.zip
           retention-days: 10
-  
+
   mark-success:
     runs-on: ubuntu-latest
     needs: test

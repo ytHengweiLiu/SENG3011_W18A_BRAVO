@@ -19,7 +19,7 @@ jobs:
         run: |
           cd src/analytical-model
           zip -r ../../terraform/lambda-deployment-package-analyse.zip .
-  
+
       - name: Package data collection Lambda function
         run: |
           cd src/data-collect
@@ -39,7 +39,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }} 
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -54,7 +54,7 @@ jobs:
       - name: Terraform Import Existing Lambdas
         run: |
           cd terraform
-          
+
           # Try importing each Lambda. If it's already managed, skip.
           terraform import aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "nba_scraper_lambda already imported"
           terraform import aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "nba_retriever_lambda already imported"
@@ -71,8 +71,8 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }} 
-          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }} 
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' # Only deploy on main branch
@@ -86,5 +86,5 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }} 
-          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }} 
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
