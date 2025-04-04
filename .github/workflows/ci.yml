@@ -34,17 +34,8 @@ jobs:
       - name: Run typechecking
         run: cd src/${{ matrix.service }} && npm run typecheck
 
-      - name: Run tests with coverage
-        id: test_with_coverage
-        run: |
-          cd src/${{ matrix.service }}
-          mkdir -p ../../test-reports
-          # Use jest-junit reporter to generate a structured report
-          npm i --save-dev jest-junit
-          JEST_JUNIT_OUTPUT_DIR=../../test-reports JEST_JUNIT_OUTPUT_NAME=junit-${{ matrix.service }}.xml npm run test -- --coverage --reporters=default --reporters=jest-junit || true
-          # Copy the coverage report to the reports directory
-          cp -r coverage ../../test-reports/coverage-${{ matrix.service }}
-        continue-on-error: true
+      - name: Run tests
+        run: cd src/${{ matrix.service }} && npm run test
 
       # - name: Install dependencies
       #   run: cd src/tests/e2eTest && npm install
@@ -58,22 +49,11 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
-      # Generate a PDF report from coverage
-      # Generate a PDF report from coverage
-      - name: Generate PDF report
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y chromium
-          sudo npm install -g nyc-report-html-pdf
-          cd src/${{ matrix.service }}
-          npx nyc-report-html-pdf --coverage=.coverage/coverage-final.json --output=coverage-report.pdf
-
-      # Upload test report as artifact
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
+      - name: Publish Test Report
+        uses: ctrf-io/github-test-reporter@v1
         with:
-          name: ${{ matrix.service }}-test-report
-          path: src/${{ matrix.service }}/coverage-report.pdf
+          report-path: './ctrf/*.json'
+        if: always()
 
       # Package Lambda function
       - name: Package Lambda function
