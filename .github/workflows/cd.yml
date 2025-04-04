@@ -15,26 +15,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Download all Lambda packages from the CI workflow
-      - name: Download Lambda packages
-        uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
-          pattern: lambda-package-*
-          path: terraform/
+      - name: Package Analytical Lambda function
+        run: |
+          cd src/analytical-model
+          zip -r ../../terraform/lambda-deployment-package-analyse.zip .
+  
+      - name: Package data collection Lambda function
+        run: |
+          cd src/data-collect
+          zip -r ../../terraform/lambda-deployment-package-collect.zip .
+
+      - name: Package Analytical Lambda function
+        run: |
+          cd src/data-retrieve
+          zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
 
       - name: List downloaded packages
-        run: ls -la terraform/
-
-      - name: Rename downloaded packages
-        run: |
-          cd terraform
-          for file in lambda-package-*; do
-            mv "$file" "lambda-deployment-package-${file#lambda-package-}.zip"
-          done
-
-      - name: List renamed packages
         run: ls -la terraform/
 
       - name: Set up Terraform
