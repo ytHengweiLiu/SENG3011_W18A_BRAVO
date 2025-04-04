@@ -6,6 +6,7 @@ on:
     branches: [main]
     types:
       - completed
+  workflow_dispatch:
 
 env:
   TF_LOG: TRACE
@@ -18,7 +19,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Package Analytical Lambda function
         run: |
@@ -55,7 +56,7 @@ jobs:
       - name: Terraform Import Existing Lambdas
         run: |
           cd terraform
-          
+
           terraform import aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "nba_scraper_lambda already imported"
           terraform import aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "nba_retriever_lambda already imported"
           terraform import aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "nba_analyse_lambda already imported"
@@ -68,7 +69,7 @@ jobs:
             -var="aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" \
             -var="s3_bucket_name=$BUCKET_NAME" \
             -var="alert_email=$ALERT_EMAIL" \
-            -parallelism=1  # Reduce parallelism to make logs clearer
+            -parallelism=1
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -88,7 +89,7 @@ jobs:
 
       - name: Upload Terraform logs if apply hangs or fails
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-logs
           path: /tmp/terraform.log
