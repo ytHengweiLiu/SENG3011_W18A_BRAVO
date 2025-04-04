@@ -39,13 +39,11 @@ jobs:
         run: |
           cd src/${{ matrix.service }}
           mkdir -p ../../test-reports
-          # Run tests and capture full output
-          npm run test -- --coverage > ../../test-reports/test-full-output-${{ matrix.service }}.txt || true
-
-          # Extract just the test results and coverage summary
-          cat ../../test-reports/test-full-output-${{ matrix.service }}.txt | grep -A 100 "PASS\|FAIL" | grep -B 100 "Time:" > ../../test-reports/test-report-${{ matrix.service }}.txt
-          echo "" >> ../../test-reports/test-report-${{ matrix.service }}.txt
-          cat ../../test-reports/test-full-output-${{ matrix.service }}.txt | grep -A 10 "Coverage summary" >> ../../test-reports/test-report-${{ matrix.service }}.txt
+          # Use jest-junit reporter to generate a structured report
+          npm i --save-dev jest-junit
+          JEST_JUNIT_OUTPUT_DIR=../../test-reports JEST_JUNIT_OUTPUT_NAME=junit-${{ matrix.service }}.xml npm run test -- --coverage --reporters=default --reporters=jest-junit || true
+          # Copy the coverage report to the reports directory
+          cp -r coverage ../../test-reports/coverage-${{ matrix.service }}
         continue-on-error: true
 
       # - name: Install dependencies
@@ -60,12 +58,12 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
-      # Convert test output to PDF
-      - name: Convert test output to PDF
+      # Generate a PDF report from coverage
+      - name: Generate PDF report
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y enscript ghostscript
-          enscript -p - test-reports/test-report-${{ matrix.service }}.txt | ps2pdf - test-reports/test-report-${{ matrix.service }}.pdf
+          sudo apt-get install -y wkhtmltopdf
+          wkhtmltopdf test-reports/coverage-${{ matrix.service }}/lcov-report/index.html test-reports/test-report-${{ matrix.service }}.pdf
         continue-on-error: true
 
       # Upload test report as artifact
@@ -74,7 +72,9 @@ jobs:
         with:
           name: test-reports-${{ matrix.service }}
           path: |
-            test-reports/test-report-${{ matrix.service }}.*
+            test-reports/junit-${{ matrix.service }}.xml
+            test-reports/test-report-${{ matrix.service }}.pdf
+            test-reports/coverage-${{ matrix.service }}/**
           retention-days: 30
         if: always()
 
