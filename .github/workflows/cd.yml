@@ -18,9 +18,6 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     timeout-minutes: 15
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Package Analytical Lambda function
         run: |
           cd src/analytical-model
