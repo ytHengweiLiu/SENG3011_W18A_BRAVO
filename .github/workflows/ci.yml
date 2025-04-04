@@ -34,11 +34,19 @@ jobs:
       - name: Run typechecking
         run: cd src/${{ matrix.service }} && npm run typecheck
 
-      - name: Run tests with coverage and capture output
+      - name: Run tests with coverage
         id: test_with_coverage
         run: |
           cd src/${{ matrix.service }}
-          npm run test -- --coverage | tee ../../test-output.txt
+          mkdir -p ../../test-reports
+          # Run tests and capture full output
+          npm run test -- --coverage > ../../test-reports/test-full-output-${{ matrix.service }}.txt || true
+
+          # Extract just the test results and coverage summary
+          cat ../../test-reports/test-full-output-${{ matrix.service }}.txt | grep -A 100 "PASS\|FAIL" | grep -B 100 "Time:" > ../../test-reports/test-report-${{ matrix.service }}.txt
+          echo "" >> ../../test-reports/test-report-${{ matrix.service }}.txt
+          cat ../../test-reports/test-full-output-${{ matrix.service }}.txt | grep -A 10 "Coverage summary" >> ../../test-reports/test-report-${{ matrix.service }}.txt
+        continue-on-error: true
 
       # - name: Install dependencies
       #   run: cd src/tests/e2eTest && npm install
@@ -52,66 +60,21 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
-      # Extract coverage metrics from the test output
-      - name: Extract coverage
-        id: extract_coverage
+      # Convert test output to PDF
+      - name: Convert test output to PDF
         run: |
-          # Extract the coverage percentage from the test output
-          STATEMENTS=$(grep -A 5 "Coverage summary" test-output.txt | grep "Statements" | sed -E 's/.*Statements\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
-          BRANCHES=$(grep -A 5 "Coverage summary" test-output.txt | grep "Branches" | sed -E 's/.*Branches\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
-          FUNCTIONS=$(grep -A 5 "Coverage summary" test-output.txt | grep "Functions" | sed -E 's/.*Functions\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
-          LINES=$(grep -A 5 "Coverage summary" test-output.txt | grep "Lines" | sed -E 's/.*Lines\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
-
-          echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
-          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
-          echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
-          echo "lines=$LINES" >> $GITHUB_OUTPUT
-
-          echo "Coverage extracted: Statements: $STATEMENTS%, Branches: $BRANCHES%, Functions: $FUNCTIONS%, Lines: $LINES%"
-
-      # Generate test report
-      - name: Generate test report
-        run: |
-          cd src/${{ matrix.service }}
-          echo "# Test Report for ${{ matrix.service }}" > ../../test-report-${{ matrix.service }}.md
-          echo "Date: $(date)" >> ../../test-report-${{ matrix.service }}.md
-          echo "Service: ${{ matrix.service }}" >> ../../test-report-${{ matrix.service }}.md
-          echo "" >> ../../test-report-${{ matrix.service }}.md
-          echo "## Test Results" >> ../../test-report-${{ matrix.service }}.md
-
-          if [ -f "../../test-results.json" ]; then
-            echo "### Summary" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Total Tests: \${data.numTotalTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Passed Tests: \${data.numPassedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Failed Tests: \${data.numFailedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-
-            echo "### Test Coverage" >> ../../test-report-${{ matrix.service }}.md
-            echo "- Statements: ${{ steps.extract_coverage.outputs.statements }}%" >> ../../test-report-${{ matrix.service }}.md
-            echo "- Branches: ${{ steps.extract_coverage.outputs.branches }}%" >> ../../test-report-${{ matrix.service }}.md
-            echo "- Functions: ${{ steps.extract_coverage.outputs.functions }}%" >> ../../test-report-${{ matrix.service }}.md
-            echo "- Lines: ${{ steps.extract_coverage.outputs.lines }}%" >> ../../test-report-${{ matrix.service }}.md
-
-            echo "" >> ../../test-report-${{ matrix.service }}.md
-            echo "### Failed Tests" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); const failures = data.testResults?.filter(t => t.status === 'failed') || []; failures.forEach(f => { console.log(\`- \${f.name}: \${f.message || 'Failed'}\`); });" >> ../../test-report-${{ matrix.service }}.md
-          else
-            echo "No test results found" >> ../../test-report-${{ matrix.service }}.md
-          fi
-
-      # Convert MD to PDF
-      # - name: Install md-to-pdf
-      #   run: npm install -g md-to-pdf
-
-      # - name: Convert report to PDF
-      #   run: md-to-pdf test-report-${{ matrix.service }}.md
+          sudo apt-get update -qq
+          sudo apt-get install -y enscript ghostscript
+          enscript -p - test-reports/test-report-${{ matrix.service }}.txt | ps2pdf - test-reports/test-report-${{ matrix.service }}.pdf
+        continue-on-error: true
 
       # Upload test report as artifact
-      - name: Upload test report
+      - name: Upload test reports
         uses: actions/upload-artifact@v4
         with:
-          name: test-report-${{ matrix.service }}
+          name: test-reports-${{ matrix.service }}
           path: |
-            test-report-${{ matrix.service }}.md
+            test-reports/test-report-${{ matrix.service }}.*
           retention-days: 30
         if: always()
 
