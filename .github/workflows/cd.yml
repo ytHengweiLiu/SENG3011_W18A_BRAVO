@@ -19,6 +19,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ci-success
+          path: ci-success-marker.txt
 
       # Download all Lambda packages from the CI workflow
       - name: Download Lambda packages
