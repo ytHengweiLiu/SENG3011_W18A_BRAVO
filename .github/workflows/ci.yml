@@ -51,7 +51,7 @@ jobs:
 
       - name: Check if coverage file exists
         run: |
-          if [ -f "../../coverage/coverage-summary.json" ]; then
+          if [ -f "./coverage/coverage-summary.json" ]; then
             echo "Coverage file found."
           else
             echo "Coverage file not found."
