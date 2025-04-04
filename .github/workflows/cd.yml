@@ -18,16 +18,19 @@ jobs:
       - name: Package Analytical Lambda function
         run: |
           cd src/analytical-model
+          npm install
           zip -r ../../terraform/lambda-deployment-package-analyse.zip .
-  
+
       - name: Package data collection Lambda function
         run: |
           cd src/data-collect
+          npm install
           zip -r ../../terraform/lambda-deployment-package-collect.zip .
 
       - name: Package data retrieve Lambda function
         run: |
           cd src/data-retrieve
+          npm install
           zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
 
       - name: List downloaded packages
@@ -41,7 +44,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }} 
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
@@ -64,10 +67,11 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }} 
-          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }} 
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
 
       - name: Terraform Apply
+        timeout-minutes: 10
         if: github.ref == 'refs/heads/main' # Only deploy on main branch
         run: |
           cd terraform
@@ -79,5 +83,5 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }} 
-          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }} 
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
