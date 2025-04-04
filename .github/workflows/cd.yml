@@ -21,7 +21,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
-          pattern: lambda-package-*
+          pattern: lambda-deployment-package-*
           path: terraform/
 
       - name: List downloaded packages
