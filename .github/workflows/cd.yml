@@ -50,6 +50,16 @@ jobs:
         run: |
           cd terraform
           terraform init
+
+      - name: Terraform Import Existing Lambdas
+        run: |
+          cd terraform
+          
+          # Try importing each Lambda. If it's already managed, skip.
+          terraform import aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "nba_scraper_lambda already imported"
+          terraform import aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "nba_retriever_lambda already imported"
+          terraform import aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "nba_analyse_lambda already imported"
+
       - name: Terraform Plan
         run: |
           cd terraform
