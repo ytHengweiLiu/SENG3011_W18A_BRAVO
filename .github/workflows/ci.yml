@@ -32,6 +32,18 @@ jobs:
       - name: Run tests with coverage
         run: cd src/${{ matrix.service }} && npm run test
 
+      - name: Install dependencies
+        run: cd src/tests/e2eTest && npm install
+
+      - name: Run e2e tests
+        run: cd src/tests/e2eTest && npm run test
+
+      - name: Install dependencies
+        run: cd src/tests/contractTest && npm install
+
+      - name: Run contract tests
+        run: cd src/tests/contractTest && npm run test
+
       # Package Lambda function
       - name: Package Lambda function
         run: |
