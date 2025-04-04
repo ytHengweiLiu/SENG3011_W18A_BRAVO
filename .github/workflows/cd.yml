@@ -11,6 +11,7 @@ on:
 env:
   TF_LOG: INFO
   AWS_REGION: us-east-1
+  TF_IN_AUTOMATION: "true" # This tells Terraform it's running in automation mode
 
 jobs:
   deploy:
@@ -58,33 +59,40 @@ jobs:
         with:
           terraform_version: 1.5.7
 
+      - name: Create Terraform variables file
+        run: |
+          cd terraform
+          cat > terraform.tfvars <<EOF
+          s3_bucket_name = "${{ secrets.S3_BUCKET_NAME }}"
+          aws_access_key_id = "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws_secret_access_key = "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          aws_region = "${{ env.AWS_REGION }}"
+          EOF
+
       - name: Terraform Init
         run: |
           cd terraform
-          terraform init
+          terraform init -input=false
 
       - name: Import existing resources (if any)
         continue-on-error: true
         run: |
           cd terraform
-          terraform import aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "Resource may not exist yet"
-          terraform import aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "Resource may not exist yet"
-          terraform import aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "Resource may not exist yet"
+          terraform import -input=false aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "Resource may not exist yet"
+          terraform import -input=false aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "Resource may not exist yet"
+          terraform import -input=false aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "Resource may not exist yet"
 
       - name: Terraform Plan
         id: plan
         run: |
           cd terraform
-          terraform plan -input=false -out=tfplan \
-            -var="s3_bucket_name=${{ secrets.S3_BUCKET_NAME }}" \
-            -var="aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" \
-            -var="aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+          terraform plan -input=false -out=tfplan
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           cd terraform
-          terraform apply -auto-approve -input=false tfplan
+          terraform apply -input=false -auto-approve tfplan
 
       - name: Get API Gateway URL
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -96,4 +104,4 @@ jobs:
         if: always()
         run: |
           cd terraform
-          rm -f lambda-deployment-package-*.zip tfplan
+          rm -f lambda-deployment-package-*.zip tfplan terraform.tfvars
