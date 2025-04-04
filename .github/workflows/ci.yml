@@ -34,7 +34,7 @@ jobs:
         run: cd src/${{ matrix.service }} && npm run typecheck
 
       - name: Run tests with coverage
-        run: cd src/${{ matrix.service }} && npm run test -- --coverage --json --outputFile=../../test-results.json
+        run: cd src/${{ matrix.service }} && npm run test npm run test -- --coverage --coverageReporters='json-summary'
 
       # Check test coverage
       - name: Check test coverage
@@ -65,8 +65,6 @@ jobs:
         with:
           report-path: "./src/${{ matrix.service }}/ctrf/*.json"
           summary-report: true
-          upload-artifact: true
-          artifact-name: test-report-${{ matrix.service }}
         if: always()
 
       # Install tools for PDF generation
