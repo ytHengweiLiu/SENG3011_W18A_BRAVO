@@ -34,339 +34,30 @@ jobs:
         run: cd src/${{ matrix.service }} && npm run typecheck
 
       - name: Run tests with coverage
-        run: |
-          cd src/${{ matrix.service }}
-          npm run test -- --coverage --json --outputFile=../../test-results.json
+        run: cd src/${{ matrix.service }} && npm run test npm run test -- --coverage --coverageReporters='json-summary'
 
-      # Check test coverage - use find to locate the coverage file
+      # Check test coverage
       - name: Check test coverage
         run: |
           cd src/${{ matrix.service }}
-          COVERAGE_FILE=$(find . -name "coverage-summary.json" -type f | head -1)
-          if [ -n "$COVERAGE_FILE" ]; then
-            COVERAGE=$(cat "$COVERAGE_FILE" | jq '.total.lines.pct')
-            echo "Test coverage is $COVERAGE%"
-            if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-              echo "::warning::Test coverage for ${{ matrix.service }} is below 80% (currently $COVERAGE%)"
-            fi
-          else
-            echo "::warning::No coverage data found for ${{ matrix.service }}"
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Test coverage is $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "::warning::Test coverage for ${{ matrix.service }} is below 80% (currently $COVERAGE%)"
           fi
         shell: bash
-        
-      # Install tools for PDF generation
-      - name: Install PDF generation tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wkhtmltopdf
-        
-      # Format coverage report to a better looking PDF
-      - name: Generate formatted coverage PDF report
-        run: |
-          cd src/${{ matrix.service }}
-          COVERAGE_FILE=$(find . -name "coverage-summary.json" -type f | head -1)
-          if [ -n "$COVERAGE_FILE" ]; then
-            # Create a nicely styled HTML file
-            cat > coverage-report.html << 'EOL'
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Coverage Report</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    h1 {
-      color: #2c3e50;
-      border-bottom: 2px solid #3498db;
-      padding-bottom: 10px;
-      margin-bottom: 30px;
-    }
-    h2 {
-      color: #2980b9;
-      margin-top: 30px;
-    }
-    .summary-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .summary-table th {
-      background-color: #3498db;
-      color: white;
-      text-align: left;
-      padding: 12px 15px;
-    }
-    .summary-table td {
-      padding: 12px 15px;
-      border-bottom: 1px solid #ddd;
-    }
-    .summary-table tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    .summary-table tr:hover {
-      background-color: #e3f2fd;
-    }
-    .good {
-      color: #27ae60;
-      font-weight: bold;
-    }
-    .warning {
-      color: #f39c12;
-      font-weight: bold;
-    }
-    .poor {
-      color: #e74c3c;
-      font-weight: bold;
-    }
-    .details {
-      margin-top: 30px;
-      border: 1px solid #ddd;
-      padding: 20px;
-      border-radius: 5px;
-    }
-  </style>
-</head>
-<body>
-EOL
-            
-            echo "<h1>Coverage Report for ${{ matrix.service }}</h1>" >> coverage-report.html
-            
-            # Extract and format the coverage data
-            LINES=$(cat "$COVERAGE_FILE" | jq -r '.total.lines.pct')
-            STATEMENTS=$(cat "$COVERAGE_FILE" | jq -r '.total.statements.pct')
-            FUNCTIONS=$(cat "$COVERAGE_FILE" | jq -r '.total.functions.pct')
-            BRANCHES=$(cat "$COVERAGE_FILE" | jq -r '.total.branches.pct')
-            
-            # Add color classes based on values
-            LINES_CLASS=$(if (( $(echo "$LINES >= 90" | bc -l) )); then echo "good"; elif (( $(echo "$LINES >= 80" | bc -l) )); then echo "warning"; else echo "poor"; fi)
-            STATEMENTS_CLASS=$(if (( $(echo "$STATEMENTS >= 90" | bc -l) )); then echo "good"; elif (( $(echo "$STATEMENTS >= 80" | bc -l) )); then echo "warning"; else echo "poor"; fi)
-            FUNCTIONS_CLASS=$(if (( $(echo "$FUNCTIONS >= 90" | bc -l) )); then echo "good"; elif (( $(echo "$FUNCTIONS >= 80" | bc -l) )); then echo "warning"; else echo "poor"; fi)
-            BRANCHES_CLASS=$(if (( $(echo "$BRANCHES >= 90" | bc -l) )); then echo "good"; elif (( $(echo "$BRANCHES >= 80" | bc -l) )); then echo "warning"; else echo "poor"; fi)
-            
-            # Add summary table
-            cat >> coverage-report.html << EOL
-<h2>Coverage Summary</h2>
-<table class="summary-table">
-  <tr>
-    <th>Category</th>
-    <th>Total</th>
-    <th>Covered</th>
-    <th>Coverage %</th>
-  </tr>
-  <tr>
-    <td>Lines</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.lines.total')</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.lines.covered')</td>
-    <td class="${LINES_CLASS}">${LINES}%</td>
-  </tr>
-  <tr>
-    <td>Statements</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.statements.total')</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.statements.covered')</td>
-    <td class="${STATEMENTS_CLASS}">${STATEMENTS}%</td>
-  </tr>
-  <tr>
-    <td>Functions</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.functions.total')</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.functions.covered')</td>
-    <td class="${FUNCTIONS_CLASS}">${FUNCTIONS}%</td>
-  </tr>
-  <tr>
-    <td>Branches</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.branches.total')</td>
-    <td>$(cat "$COVERAGE_FILE" | jq -r '.total.branches.covered')</td>
-    <td class="${BRANCHES_CLASS}">${BRANCHES}%</td>
-  </tr>
-</table>
-EOL
 
-            # Add file details
-            echo "<h2>Files</h2>" >> coverage-report.html
-            echo "<div class='details'>" >> coverage-report.html
-            
-            # Extract files details
-            cat "$COVERAGE_FILE" | jq -r 'keys[] | select(startsWith("/"))' | while read -r file; do
-              FILE_LINES=$(cat "$COVERAGE_FILE" | jq -r ".[\"$file\"].lines.pct")
-              FILE_LINES_CLASS=$(if (( $(echo "$FILE_LINES >= 90" | bc -l) )); then echo "good"; elif (( $(echo "$FILE_LINES >= 80" | bc -l) )); then echo "warning"; else echo "poor"; fi)
-              
-              echo "<h3>$(basename "$file")</h3>" >> coverage-report.html
-              echo "<p>Path: $file</p>" >> coverage-report.html
-              
-              echo "<table class='summary-table'>" >> coverage-report.html
-              echo "<tr><th>Category</th><th>Total</th><th>Covered</th><th>Coverage %</th></tr>" >> coverage-report.html
-              
-              echo "<tr>" >> coverage-report.html
-              echo "<td>Lines</td>" >> coverage-report.html
-              echo "<td>$(cat "$COVERAGE_FILE" | jq -r ".[\"$file\"].lines.total")</td>" >> coverage-report.html
-              echo "<td>$(cat "$COVERAGE_FILE" | jq -r ".[\"$file\"].lines.covered")</td>" >> coverage-report.html
-              echo "<td class='${FILE_LINES_CLASS}'>$FILE_LINES%</td>" >> coverage-report.html
-              echo "</tr>" >> coverage-report.html
-              
-              echo "</table>" >> coverage-report.html
-            done
-            
-            echo "</div>" >> coverage-report.html
-            echo "</body></html>" >> coverage-report.html
-            
-            # Convert HTML to PDF
-            wkhtmltopdf coverage-report.html coverage-report.pdf
-          else
-            echo "No coverage data found."
-            echo "<html><body><h1>No Coverage Data Available</h1></body></html>" > coverage-report.html
-            wkhtmltopdf coverage-report.html coverage-report.pdf
-          fi
-        shell: bash
-        
-      # Format test results to a better looking PDF
-      - name: Generate formatted test results PDF report
-        run: |
-          cd src/${{ matrix.service }}
-          if ls ctrf/*.json 1> /dev/null 2>&1; then
-            # Create a nicely styled HTML file
-            cat > test-report.html << 'EOL'
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Test Results</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    h1 {
-      color: #2c3e50;
-      border-bottom: 2px solid #3498db;
-      padding-bottom: 10px;
-      margin-bottom: 30px;
-    }
-    h2 {
-      color: #2980b9;
-      margin-top: 30px;
-    }
-    .summary-box {
-      background-color: #f8f9fa;
-      border-left: 5px solid #3498db;
-      padding: 15px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
-    .summary-item {
-      margin: 10px 20px 10px 0;
-    }
-    .summary-item-label {
-      font-weight: bold;
-      color: #7f8c8d;
-    }
-    .summary-item-value {
-      font-size: 1.2em;
-      margin-top: 5px;
-    }
-    .test-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .test-table th {
-      background-color: #3498db;
-      color: white;
-      text-align: left;
-      padding: 12px 15px;
-    }
-    .test-table td {
-      padding: 12px 15px;
-      border-bottom: 1px solid #ddd;
-    }
-    .test-table tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    .test-table tr:hover {
-      background-color: #e3f2fd;
-    }
-    .status-passed {
-      color: #27ae60;
-      font-weight: bold;
-    }
-    .status-failed {
-      color: #e74c3c;
-      font-weight: bold;
-    }
-    .status-skipped {
-      color: #f39c12;
-      font-weight: bold;
-    }
-    .test-group {
-      margin-bottom: 40px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 20px;
-    }
-    .duration {
-      color: #7f8c8d;
-    }
-  </style>
-</head>
-<body>
-EOL
-            
-            echo "<h1>Test Results for ${{ matrix.service }}</h1>" >> test-report.html
-            
-            for file in ctrf/*.json; do
-              SUITE_NAME=$(basename "$file" .json)
-              echo "<h2>Test Suite: $SUITE_NAME</h2>" >> test-report.html
-              
-              # Extract summary statistics
-              TOTAL=$(cat "$file" | jq -r '.results.summary.tests')
-              PASSED=$(cat "$file" | jq -r '.results.summary.passed')
-              FAILED=$(cat "$file" | jq -r '.results.summary.failed')
-              SKIPPED=$(cat "$file" | jq -r '.results.summary.skipped')
-              
-              # Add summary box
-              cat >> test-report.html << EOL
-<div class="summary-box">
-  <div class="summary-item">
-    <div class="summary-item-label">Total Tests</div>
-    <div class="summary-item-value">$TOTAL</div>
-  </div>
-  <div class="summary-item">
-    <div class="summary-item-label">Passed</div>
-    <div class="summary-item-value status-passed">$PASSED</div>
-  </div>
-  <div class="summary-item">
-    <div class="summary-item-label">Failed</div>
-    <div class="summary-item-value status-failed">$FAILED</div>
-  </div>
-  <div class="summary-item">
-    <div class="summary-item-label">Skipped</div>
-    <div class="summary-item-value status-skipped">$SKIPPED</div>
-  </div>
-</div>
-EOL
-              
-              # Group tests by suite
-              SUITES=$(cat "$file" | jq -r '.results.tests[] | .suite' | sort | uniq)
-              
-              for suite in $SUITES; do
-                echo "<div class='test-group'>" >> test-report.html
-                echo "<h3>$suite</h3>" >> test-report.html
-                
-                echo "<table class='test-table'>" >> test-report.html
-                echo "<tr><th>Test</th><th>Status</th><th>Duration</th></tr>" >> test-report.html
-                
-                cat "$file" | jq -r --arg suite "$suite" '.results.tests[] | select(.suite==$suite) | {name: .name, status: .status, duration: .duration} | [.name, .status, .duration] | @tsv' | while IFS=
+      # - name: Install dependencies
+      #   run: cd src/tests/e2eTest && npm install
+
+      # - name: Run e2e tests
+      #   run: cd src/tests/e2eTest && npm run test
+
+      # - name: Install dependencies
+      #   run: cd src/tests/contractTest && npm install
+
+      # - name: Run contract tests
+      #   run: cd src/tests/contractTest && npm run test
 
       # Generate test report
       - name: Publish Test Report
@@ -374,59 +65,55 @@ EOL
         with:
           report-path: "./src/${{ matrix.service }}/ctrf/*.json"
           summary-report: true
-          upload-artifact: true
-          artifact-name: test-report-${{ matrix.service }}
         if: always()
 
-      # Upload coverage files as artifacts
-      - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-${{ matrix.service }}
-          path: |
-            src/${{ matrix.service }}/**/coverage
-            src/${{ matrix.service }}/**/coverage-*.json
-          retention-days: 10
+      # Install tools for PDF generation
+      - name: Install PDF generation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf
+          npm install -g json-to-html
 
-      # Package Lambda function
-      - name: Package Lambda function
+      # Format coverage report to PDF
+      - name: Generate coverage PDF report
         run: |
           cd src/${{ matrix.service }}
-          zip -r ../../terraform/lambda-deployment-package-${{ matrix.service }}.zip .
+          # Create a simple HTML file with the coverage data
+          echo "<html><head><title>Coverage Report for ${{ matrix.service }}</title></head><body>" > coverage-report.html
+          echo "<h1>Coverage Report for ${{ matrix.service }}</h1>" >> coverage-report.html
+          echo "<pre>" >> coverage-report.html
+          cat coverage/coverage-summary.json | jq -r . >> coverage-report.html
+          echo "</pre>" >> coverage-report.html
 
-      # Upload as an artifact
-      - name: Upload Lambda package
-        uses: actions/upload-artifact@v4
-        with:
-          name: lambda-package-${{ matrix.service }}
-          path: terraform/lambda-deployment-package-${{ matrix.service }}.zip
-          retention-days: 10
+          # Add formatted table if needed
+          echo "<h2>Coverage Summary</h2>" >> coverage-report.html
+          echo "<table border='1'>" >> coverage-report.html
+          echo "<tr><th>Category</th><th>Lines %</th><th>Statements %</th><th>Functions %</th><th>Branches %</th></tr>" >> coverage-report.html
+          LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
+          FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
+          BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
+          echo "<tr><td>Total</td><td>$LINES</td><td>$STATEMENTS</td><td>$FUNCTIONS</td><td>$BRANCHES</td></tr>" >> coverage-report.html
+          echo "</table>" >> coverage-report.html
+          echo "</body></html>" >> coverage-report.html
 
-  mark-success:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Create success marker file
-        run: echo "CI completed successfully" > ci-success-marker.txt
+          # Convert HTML to PDF
+          wkhtmltopdf coverage-report.html coverage-report.pdf
 
-      - name: Upload CI success marker
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-success
-          path: ci-success-marker.txt
-\t' read -r name status duration; do
-                  STATUS_CLASS="status-$(echo $status | tr '[:upper:]' '[:lower:]')"
-                  
-                  echo "<tr>" >> test-report.html
-                  echo "<td>$name</td>" >> test-report.html
-                  echo "<td class='$STATUS_CLASS'>$status</td>" >> test-report.html
-                  echo "<td class='duration'>${duration}ms</td>" >> test-report.html
-                  echo "</tr>" >> test-report.html
-                done
-                
-                echo "</table>" >> test-report.html
-                echo "</div>" >> test-report.html
-              done
+      # Format test results to PDF (if CTRF files exist)
+      - name: Generate test results PDF report
+        run: |
+          cd src/${{ matrix.service }}
+          if ls ctrf/*.json 1> /dev/null 2>&1; then
+            # Create a simple HTML file with the test results
+            echo "<html><head><title>Test Results for ${{ matrix.service }}</title></head><body>" > test-report.html
+            echo "<h1>Test Results for ${{ matrix.service }}</h1>" >> test-report.html
+            
+            for file in ctrf/*.json; do
+              echo "<h2>Test Suite: $(basename "$file")</h2>" >> test-report.html
+              echo "<pre>" >> test-report.html
+              cat "$file" | jq -r . >> test-report.html
+              echo "</pre>" >> test-report.html
             done
             
             echo "</body></html>" >> test-report.html
@@ -434,30 +121,18 @@ EOL
             # Convert HTML to PDF
             wkhtmltopdf test-report.html test-report.pdf
           else
-            echo "No test result files found."
-            echo "<html><body><h1>No Test Results Available</h1></body></html>" > test-report.html
-            wkhtmltopdf test-report.html test-report.pdf
+            echo "No CTRF test result files found."
           fi
-        shell: bash
 
-      # Generate test report
-      - name: Publish Test Report
-        uses: ctrf-io/github-test-reporter@v1
-        with:
-          report-path: "./src/${{ matrix.service }}/ctrf/*.json"
-          summary-report: true
-          upload-artifact: true
-          artifact-name: test-report-${{ matrix.service }}
-        if: always()
-
-      # Upload coverage files as artifacts
+      # Upload both raw coverage reports and PDF reports as artifacts
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.service }}
           path: |
-            src/${{ matrix.service }}/**/coverage
-            src/${{ matrix.service }}/**/coverage-*.json
+            src/${{ matrix.service }}/coverage
+            src/${{ matrix.service }}/coverage-report.pdf
+            src/${{ matrix.service }}/test-report.pdf
           retention-days: 10
 
       # Package Lambda function

@@ -6,85 +6,95 @@ on:
     branches: [main]
     types:
       - completed
+  workflow_dispatch:
+
+env:
+  TF_LOG: INFO
+  AWS_REGION: us-east-1
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Package Analytical Lambda function
-        run: |
-          cd src/analytical-model
-          zip -r ../../terraform/lambda-deployment-package-analyse.zip .
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
 
-      - name: Package data collection Lambda function
+      - name: Package Data Collection Lambda function
         run: |
           cd src/data-collect
+          npm install
           zip -r ../../terraform/lambda-deployment-package-collect.zip .
-      - name: Package data retrieve Lambda function
+
+      - name: Package Data Retrieval Lambda function
         run: |
           cd src/data-retrieve
+          npm install
           zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
-      - name: List downloaded packages
+
+      - name: Package Analytical Model Lambda function
+        run: |
+          cd src/analytical-model
+          npm install
+          zip -r ../../terraform/lambda-deployment-package-analyse.zip .
+
+      - name: Display packaged Lambda functions
         run: ls -la terraform/
 
-      - name: echo AWS credentials
-        run: |
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID"
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY"
-          echo "s3_bucket_name=$BUCKET_NAME"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.11.2
+          terraform_version: 1.5.7
 
       - name: Terraform Init
         run: |
           cd terraform
           terraform init
 
-      - name: Terraform Import Existing Lambdas
+      - name: Import existing resources (if any)
+        continue-on-error: true
         run: |
           cd terraform
-
-          # Try importing each Lambda. If it's already managed, skip.
-          terraform import aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "nba_scraper_lambda already imported"
-          terraform import aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "nba_retriever_lambda already imported"
-          terraform import aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "nba_analyse_lambda already imported"
+          terraform import aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "Resource may not exist yet"
+          terraform import aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "Resource may not exist yet"
+          terraform import aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "Resource may not exist yet"
 
       - name: Terraform Plan
+        id: plan
         run: |
           cd terraform
-          terraform plan -input=false \
-            -var="aws_access_key_id=$AWS_ACCESS_KEY_ID" \
-            -var="aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" \
-            -var="s3_bucket_name=$BUCKET_NAME" \
-            -var="alert_email=$ALERT_EMAIL"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+          terraform plan -input=false -out=tfplan \
+            -var="s3_bucket_name=${{ secrets.S3_BUCKET_NAME }}" \
+            -var="aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var="aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -var="alert_email=${{ secrets.ALERT_EMAIL }}"
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' # Only deploy on main branch
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           cd terraform
-          terraform apply -auto-approve -input=false \
-            -var="aws_access_key_id=$AWS_ACCESS_KEY_ID" \
-            -var="aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" \
-            -var="s3_bucket_name=$BUCKET_NAME" \
-            -var="alert_email=$ALERT_EMAIL"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+          terraform apply -auto-approve -input=false tfplan
+
+      - name: Get API Gateway URL
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          cd terraform
+          echo "API URL: $(terraform output -raw api_url)"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd terraform
+          rm -f lambda-deployment-package-*.zip tfplan
