@@ -25,14 +25,20 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# S3 Bucket
-resource "aws_s3_bucket" "nba_prediction_bucket" {
+# Check if the S3 Bucket exists
+data "aws_s3_bucket" "nba_prediction_bucket" {
   bucket = "nba-prediction-bucket-seng3011"
 }
 
+# # S3 Bucket
+# resource "aws_s3_bucket" "nba_prediction_bucket" {
+#   count  = length(data.aws_s3_bucket.nba_prediction_bucket.id) == 0 ? 1 : 0
+#   bucket = "nba-prediction-bucket-seng3011"
+# }
+
 # Disable ACLs and enforce bucket owner enforced
 resource "aws_s3_bucket_ownership_controls" "nba_prediction_bucket_ownership" {
-  bucket = aws_s3_bucket.nba_prediction_bucket.id
+  bucket = data.aws_s3_bucket.nba_prediction_bucket.id
 
   rule {
     object_ownership = "BucketOwnerEnforced"
@@ -41,7 +47,7 @@ resource "aws_s3_bucket_ownership_controls" "nba_prediction_bucket_ownership" {
 
 # Set the bucket policy to private
 resource "aws_s3_bucket_public_access_block" "nba_prediction_bucket_public_access" {
-  bucket = aws_s3_bucket.nba_prediction_bucket.id
+  bucket = data.aws_s3_bucket.nba_prediction_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -49,54 +55,66 @@ resource "aws_s3_bucket_public_access_block" "nba_prediction_bucket_public_acces
   restrict_public_buckets = true
 }
 
-# IAM Role for Lambda
-resource "aws_iam_role" "lambda_exec_role" {
-  name = "lambda_exec_role${local.name_suffix}"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
+# IAM Role: Check if the IAM role exists
+data "aws_iam_role" "lambda_exec_role" {
+  name = "lambda_exec_role"
 }
 
-# IAM Policy for Lambda to access S3
-resource "aws_iam_policy" "lambda_s3_access_policy" {
-  name        = "LambdaS3AccessPolicy${local.name_suffix}"
-  description = "Allow Lambda to access S3 bucket"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["s3:ListBucket"]
-        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011"]
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject"]
-        Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011/*"]
-      }
-    ]
-  })
+# # IAM Role for Lambda
+# resource "aws_iam_role" "lambda_exec_role" {
+#   count  = length(data.aws_iam_role.lambda_exec_role.id) == 0 ? 1 : 0
+#   name = "lambda_exec_role${local.name_suffix}"
+
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = "sts:AssumeRole"
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "lambda.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
+# }
+
+# IAM Policy: Check if the IAM policy exists
+data "aws_iam_policy" "lambda_s3_access_policy" {
+  name = "LambdaS3AccessPolicy"
 }
+
+# # IAM Policy for Lambda to access S3
+# resource "aws_iam_policy" "lambda_s3_access_policy" {
+#   count = length(data.aws_iam_policy.lambda_s3_access_policy.id) == 0 ? 1 : 0
+#   name        = "LambdaS3AccessPolicy${local.name_suffix}"
+#   description = "Allow Lambda to access S3 bucket"
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect   = "Allow"
+#         Action   = ["s3:ListBucket"]
+#         Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011"]
+#       },
+#       {
+#         Effect   = "Allow"
+#         Action   = ["s3:GetObject", "s3:PutObject"]
+#         Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011/*"]
+#       }
+#     ]
+#   })
+# }
 
 # Attach the S3 access policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "lambda_s3_access" {
-  role       = aws_iam_role.lambda_exec_role.name
-  policy_arn = aws_iam_policy.lambda_s3_access_policy.arn
+  role       = data.aws_iam_role.lambda_exec_role.name
+  policy_arn = data.aws_iam_policy.lambda_s3_access_policy.arn
 }
 
 # Attach the basic Lambda execution policy
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
-  role       = aws_iam_role.lambda_exec_role.name
+  role       = data.aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
@@ -105,14 +123,14 @@ resource "aws_lambda_function" "nba_scraper_lambda" {
   function_name = "nba-scraper-lambda${local.name_suffix}"
   handler       = "data-collect.handler"
   runtime       = "nodejs18.x"
-  role          = aws_iam_role.lambda_exec_role.arn
+  role          = data.aws_iam_role.lambda_exec_role.arn
 
   filename         = "lambda-deployment-package-collect${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-collect${local.name_suffix}.zip")
 
   environment {
     variables = {
-      S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
+      S3_BUCKET_NAME = data.aws_s3_bucket.nba_prediction_bucket.bucket
       S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
@@ -125,14 +143,14 @@ resource "aws_lambda_function" "nba_retriever_lambda" {
   function_name = "nba-retriever-lambda${local.name_suffix}"
   handler       = "data-retrieve.handler"
   runtime       = "nodejs18.x"
-  role          = aws_iam_role.lambda_exec_role.arn
+  role          = data.aws_iam_role.lambda_exec_role.arn
 
   filename         = "lambda-deployment-package-retrieve${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-retrieve${local.name_suffix}.zip")
 
   environment {
     variables = {
-      S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
+      S3_BUCKET_NAME = data.aws_s3_bucket.nba_prediction_bucket.bucket
       S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
@@ -143,7 +161,7 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
   function_name = "nba-analyse-lambda${local.name_suffix}"
   handler       = "team-analyse.handler"
   runtime       = "nodejs18.x"
-  role          = aws_iam_role.lambda_exec_role.arn
+  role          = data.aws_iam_role.lambda_exec_role.arn
 
   filename         = "lambda-deployment-package-analyse${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-analyse${local.name_suffix}.zip")
