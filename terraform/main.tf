@@ -38,7 +38,7 @@ data "aws_s3_bucket" "nba_prediction_bucket" {
 
 # Disable ACLs and enforce bucket owner enforced
 resource "aws_s3_bucket_ownership_controls" "nba_prediction_bucket_ownership" {
-  bucket = aws_s3_bucket.nba_prediction_bucket.id
+  bucket = data.aws_s3_bucket.nba_prediction_bucket.id
 
   rule {
     object_ownership = "BucketOwnerEnforced"
@@ -47,7 +47,7 @@ resource "aws_s3_bucket_ownership_controls" "nba_prediction_bucket_ownership" {
 
 # Set the bucket policy to private
 resource "aws_s3_bucket_public_access_block" "nba_prediction_bucket_public_access" {
-  bucket = aws_s3_bucket.nba_prediction_bucket.id
+  bucket = data.aws_s3_bucket.nba_prediction_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -108,13 +108,13 @@ data "aws_iam_policy" "lambda_s3_access_policy" {
 
 # Attach the S3 access policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "lambda_s3_access" {
-  role       = aws_iam_role.lambda_exec_role.name
-  policy_arn = aws_iam_policy.lambda_s3_access_policy.arn
+  role       = data.aws_iam_role.lambda_exec_role.name
+  policy_arn = data.aws_iam_policy.lambda_s3_access_policy.arn
 }
 
 # Attach the basic Lambda execution policy
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
-  role       = aws_iam_role.lambda_exec_role.name
+  role       = data.aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
@@ -123,14 +123,14 @@ resource "aws_lambda_function" "nba_scraper_lambda" {
   function_name = "nba-scraper-lambda${local.name_suffix}"
   handler       = "data-collect.handler"
   runtime       = "nodejs18.x"
-  role          = aws_iam_role.lambda_exec_role.arn
+  role          = data.aws_iam_role.lambda_exec_role.arn
 
   filename         = "lambda-deployment-package-collect${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-collect${local.name_suffix}.zip")
 
   environment {
     variables = {
-      S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
+      S3_BUCKET_NAME = data.aws_s3_bucket.nba_prediction_bucket.bucket
       S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
@@ -143,14 +143,14 @@ resource "aws_lambda_function" "nba_retriever_lambda" {
   function_name = "nba-retriever-lambda${local.name_suffix}"
   handler       = "data-retrieve.handler"
   runtime       = "nodejs18.x"
-  role          = aws_iam_role.lambda_exec_role.arn
+  role          = data.aws_iam_role.lambda_exec_role.arn
 
   filename         = "lambda-deployment-package-retrieve${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-retrieve${local.name_suffix}.zip")
 
   environment {
     variables = {
-      S3_BUCKET_NAME = aws_s3_bucket.nba_prediction_bucket.bucket
+      S3_BUCKET_NAME = data.aws_s3_bucket.nba_prediction_bucket.bucket
       S3_FILE_PREFIX = local.env_config.s3_file_prefix
     }
   }
@@ -161,7 +161,7 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
   function_name = "nba-analyse-lambda${local.name_suffix}"
   handler       = "team-analyse.handler"
   runtime       = "nodejs18.x"
-  role          = aws_iam_role.lambda_exec_role.arn
+  role          = data.aws_iam_role.lambda_exec_role.arn
 
   filename         = "lambda-deployment-package-analyse${local.name_suffix}.zip"
   source_code_hash = filebase64sha256("lambda-deployment-package-analyse${local.name_suffix}.zip")
