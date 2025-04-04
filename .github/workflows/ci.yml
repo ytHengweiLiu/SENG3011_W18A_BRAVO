@@ -54,6 +54,9 @@ jobs:
         uses: ctrf-io/github-test-reporter@v1
         with:
           report-path: "./src/${{ matrix.service }}/ctrf/*.json"
+          summary-report: true
+          upload-artifact: true
+          artifact-name: test-report-${{ matrix.service }}
         if: always()
 
       # Package Lambda function
