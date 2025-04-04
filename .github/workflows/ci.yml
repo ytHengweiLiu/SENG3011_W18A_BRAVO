@@ -58,15 +58,15 @@ jobs:
           path: terraform/lambda-deployment-package-${{ matrix.service }}.zip
           retention-days: 10
   
-mark-success:
-  runs-on: ubuntu-latest
-  needs: test
-  steps:
-    - name: Create dummy file for CI success marker
-      run: echo "CI successfully completed" > ci-success-marker.txt
+  mark-success:
+    runs-on: ubuntu-latest
+    needs: test  # Ensures all test jobs finish before marking CI success
+    steps:
+      - name: Create dummy file for CI success marker
+        run: echo "CI successfully completed" > ci-success-marker.txt  # Creates a file
 
-    - name: Upload CI success marker
-      uses: actions/upload-artifact@v4
-      with:
-        name: ci-success
-        path: ci-success-marker.txt
+      - name: Upload CI success marker
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-success
+          path: ci-success-marker.txt  # Use the created file as an artifact
