@@ -1,12 +1,26 @@
-const axios = require("axios");
+/**
+ * @module data-collect
+ * @description Module for scraping NBA team statistics from Yahoo Sports and uploading to AWS S3
+ */
+
+const axios = require("axios").default;
 const cheerio = require("cheerio");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
-// Initialize the S3 client
+/**
+ * Initialize the S3 client
+ * @type {S3Client}
+ */
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "us-east-1",
 });
 
+/**
+ * Scrapes NBA team statistics from Yahoo Sports and uploads to S3
+ * @async
+ * @function scrapeData
+ * @returns {Promise<Object>} Lambda response object with status code and message
+ */
 const scrapeData = async () => {
   const url = "https://sports.yahoo.com/nba/stats/team/";
 
@@ -100,7 +114,16 @@ const scrapeData = async () => {
   }
 };
 
-// Function to upload JSON data to S3
+/**
+ * Uploads JSON data to an S3 bucket
+ * @async
+ * @function uploadToS3
+ * @param {Object} jsonData - The data to upload
+ * @param {string} bucketName - The name of the S3 bucket
+ * @param {string} key - The S3 object key (path)
+ * @throws {Error} If upload fails
+ * @returns {Promise<void>}
+ */
 const uploadToS3 = async (jsonData, bucketName, key) => {
   try {
     const params = {
@@ -120,12 +143,15 @@ const uploadToS3 = async (jsonData, bucketName, key) => {
   }
 };
 
-// Lambda handler function
+/**
+ * AWS Lambda handler function
+ * @async
+ * @function handler
+ * @returns {Promise<Object>} Lambda response object
+ */
 const handler = async () => {
   return await scrapeData();
 };
-
-exports.handler = handler;
 
 module.exports = {
   handler,
