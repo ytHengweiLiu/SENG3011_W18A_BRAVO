@@ -3,7 +3,7 @@ name: Continuous Integration
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
     branches:
       - main
@@ -49,10 +49,11 @@ jobs:
       #   run: cd src/tests/contractTest && npm run test
 
       # Generate test report
+      # Generate test report
       - name: Publish Test Report
         uses: ctrf-io/github-test-reporter@v1
         with:
-          report-path: './test-results.json'
+          report-path: "./src/${{ matrix.service }}/ctrf/*.json"
         if: always()
 
       # Package Lambda function
