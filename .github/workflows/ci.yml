@@ -15,6 +15,7 @@ jobs:
     strategy:
       matrix:
         service: [data-collect, data-retrieve, analytical-model]
+      max-parallel: 3
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -73,17 +74,11 @@ jobs:
           fi
 
       # Convert MD to PDF
-      - name: Setup Pandoc
-        uses: r-lib/actions/setup-pandoc@v2
-
-      - name: Install PDF engine
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+      - name: Install md-to-pdf
+        run: npm install -g md-to-pdf
 
       - name: Convert report to PDF
-        run: |
-          pandoc test-report-${{ matrix.service }}.md -o test-report-${{ matrix.service }}.pdf
+        run: md-to-pdf test-report-${{ matrix.service }}.md
 
       # Upload test report as artifact
       - name: Upload test report
