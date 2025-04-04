@@ -25,6 +25,11 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# Check if the S3 Bucket exists
+data "aws_s3_bucket" "nba_prediction_bucket" {
+  bucket = "nba-prediction-bucket-seng3011"
+}
+
 # S3 Bucket
 resource "aws_s3_bucket" "nba_prediction_bucket" {
   bucket = "nba-prediction-bucket-seng3011"
@@ -49,6 +54,11 @@ resource "aws_s3_bucket_public_access_block" "nba_prediction_bucket_public_acces
   restrict_public_buckets = true
 }
 
+# IAM Role: Check if the IAM role exists
+data "aws_iam_role" "lambda_exec_role" {
+  name = "lambda_exec_role"
+}
+
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_exec_role" {
   name = "lambda_exec_role${local.name_suffix}"
@@ -65,6 +75,11 @@ resource "aws_iam_role" "lambda_exec_role" {
       }
     ]
   })
+}
+
+# IAM Policy: Check if the IAM policy exists
+data "aws_iam_policy" "lambda_s3_access_policy" {
+  name = "LambdaS3AccessPolicy"
 }
 
 # IAM Policy for Lambda to access S3
