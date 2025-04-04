@@ -99,11 +99,11 @@ jobs:
           fi
 
       # Convert MD to PDF
-      - name: Install md-to-pdf
-        run: npm install -g md-to-pdf
+      # - name: Install md-to-pdf
+      #   run: npm install -g md-to-pdf
 
-      - name: Convert report to PDF
-        run: md-to-pdf test-report-${{ matrix.service }}.md
+      # - name: Convert report to PDF
+      #   run: md-to-pdf test-report-${{ matrix.service }}.md
 
       # Upload test report as artifact
       - name: Upload test report
@@ -112,7 +112,6 @@ jobs:
           name: test-report-${{ matrix.service }}
           path: |
             test-report-${{ matrix.service }}.md
-            test-report-${{ matrix.service }}.pdf
           retention-days: 30
         if: always()
 
