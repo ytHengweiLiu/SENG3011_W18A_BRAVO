@@ -9,12 +9,12 @@ locals {
     default = {
       name_prefix    = "prod"
       s3_file_prefix = "nba-stats"
-      schedule       = "cron(0 12 * * ? *)" # Daily at 12:00 PM UTC
+      schedule       = "cron(0 0 * * ? *)" # Daily at 12:00 AM UTC (midnight)
     }
     dev = {
       name_prefix    = "dev"
       s3_file_prefix = "nba-stats-dev"
-      schedule       = "cron(0 13 * * ? *)" # Daily at 1:00 PM UTC (to avoid conflicts)
+      schedule       = "cron(0 1 * * ? *)" # Daily at 1:00 AM UTC (to avoid conflicts)
     }
   }
   env_config = local.env_settings[local.environment]
@@ -459,6 +459,190 @@ resource "aws_api_gateway_stage" "nba_prediction_stage" {
   stage_name    = local.environment == "default" ? "prod" : local.environment
   rest_api_id   = aws_api_gateway_rest_api.nba_prediction_api.id
   deployment_id = aws_api_gateway_deployment.nba_prediction_deployment.id
+}
+
+# CloudWatch Dashboard for monitoring Lambda functions
+resource "aws_cloudwatch_dashboard" "nba_api_dashboard" {
+  dashboard_name = "nba-api-dashboard${local.name_suffix}"
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.nba_scraper_lambda.function_name],
+            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.nba_retriever_lambda.function_name],
+            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.nba_analyse_lambda.function_name]
+          ],
+          period = 300,
+          stat   = "Sum",
+          region = var.aws_region,
+          title  = "Lambda Invocations"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.nba_scraper_lambda.function_name],
+            ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.nba_retriever_lambda.function_name],
+            ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.nba_analyse_lambda.function_name]
+          ],
+          period = 300,
+          stat   = "Sum",
+          region = var.aws_region,
+          title  = "Lambda Errors"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 12
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.nba_scraper_lambda.function_name],
+            ["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.nba_retriever_lambda.function_name],
+            ["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.nba_analyse_lambda.function_name]
+          ],
+          period = 300,
+          stat   = "Average",
+          region = var.aws_region,
+          title  = "Lambda Duration (ms)"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/ApiGateway", "Count", "ApiName", aws_api_gateway_rest_api.nba_prediction_api.name]
+          ],
+          period = 300,
+          stat   = "Sum",
+          region = var.aws_region,
+          title  = "API Requests"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 6
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/ApiGateway", "4XXError", "ApiName", aws_api_gateway_rest_api.nba_prediction_api.name],
+            ["AWS/ApiGateway", "5XXError", "ApiName", aws_api_gateway_rest_api.nba_prediction_api.name]
+          ],
+          period = 300,
+          stat   = "Sum",
+          region = var.aws_region,
+          title  = "API Errors"
+        }
+      }
+    ]
+  })
+}
+
+# CloudWatch Alarm for Lambda Errors
+resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
+  for_each = {
+    scraper   = aws_lambda_function.nba_scraper_lambda.function_name
+    retriever = aws_lambda_function.nba_retriever_lambda.function_name
+    analyser  = aws_lambda_function.nba_analyse_lambda.function_name
+  }
+
+  alarm_name          = "${each.value}-error-alarm${local.name_suffix}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "This alarm monitors for errors in the ${each.value} function"
+  alarm_actions       = [aws_sns_topic.lambda_alerts.arn]
+
+  dimensions = {
+    FunctionName = each.value
+  }
+}
+
+# CloudWatch Alarm for API Gateway 5XX Errors
+resource "aws_cloudwatch_metric_alarm" "api_5xx_error_alarm" {
+  alarm_name          = "api-5xx-error-alarm${local.name_suffix}"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "5XXError"
+  namespace           = "AWS/ApiGateway"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "This alarm monitors for 5XX errors in the API Gateway"
+  alarm_actions       = [aws_sns_topic.lambda_alerts.arn]
+
+  dimensions = {
+    ApiName = aws_api_gateway_rest_api.nba_prediction_api.name
+  }
+}
+
+# SNS Topic for Alerts
+resource "aws_sns_topic" "lambda_alerts" {
+  name = "nba-lambda-alerts${local.name_suffix}"
+}
+
+# Email subscription
+resource "aws_sns_topic_subscription" "email_subscription" {
+  topic_arn = aws_sns_topic.lambda_alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+# CloudWatch Log Groups with Retention Policy
+resource "aws_cloudwatch_log_group" "scraper_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.nba_scraper_lambda.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_cloudwatch_log_group" "retriever_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.nba_retriever_lambda.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_cloudwatch_log_group" "analyser_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.nba_analyse_lambda.function_name}"
+  retention_in_days = 14
+}
+
+# CloudWatch Logs Insights saved query
+resource "aws_cloudwatch_query_definition" "lambda_error_query" {
+  name = "NBA API Lambda Errors${local.name_suffix}"
+
+  log_group_names = [
+    aws_cloudwatch_log_group.scraper_logs.name,
+    aws_cloudwatch_log_group.retriever_logs.name,
+    aws_cloudwatch_log_group.analyser_logs.name
+  ]
+
+  query_string = <<EOF
+fields @timestamp, @message
+| filter @message like /Error/
+| sort @timestamp desc
+| limit 20
+EOF
 }
 
 # CloudWatch Event Rule to trigger the scraper function daily

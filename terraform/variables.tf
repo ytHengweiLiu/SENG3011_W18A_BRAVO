@@ -20,3 +20,9 @@ variable "s3_bucket_name" {
   description = "Name of the S3 bucket"
   type        = string
 }
+
+variable "alert_email" {
+  description = "Email address to receive alerts"
+  type        = string
+  sensitive   = true
+}
