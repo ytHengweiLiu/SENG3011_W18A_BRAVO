@@ -1,11 +1,27 @@
+/**
+ * @module data-retrieve
+ * @description Module for retrieving NBA team statistics from AWS S3
+ */
+
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 
-// Initialize the S3 client
+/**
+ * Initialize the S3 client
+ * @type {S3Client}
+ */
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "us-east-1",
 });
 
-// Function to retrieve data from S3
+/**
+ * Retrieves data from an S3 bucket
+ * @async
+ * @function retrieveDataFromS3
+ * @param {string} bucketName - The name of the S3 bucket
+ * @param {string} key - The S3 object key (path)
+ * @throws {Error} If retrieval fails
+ * @returns {Promise<Object>} The retrieved JSON data
+ */
 const retrieveDataFromS3 = async (bucketName, key) => {
   try {
     const params = {
@@ -33,7 +49,13 @@ const retrieveDataFromS3 = async (bucketName, key) => {
   }
 };
 
-// Function to retrieve today's data
+/**
+ * Retrieves the current day's NBA team statistics data from S3
+ * @async
+ * @function retrieveTodaysData
+ * @throws {Error} If retrieval fails
+ * @returns {Promise<Object>} Today's NBA team statistics data
+ */
 const retrieveTodaysData = async () => {
   const bucketName = process.env.S3_BUCKET_NAME;  // S3 bucket name from environment variable
   const date = new Date().toISOString().split("T")[0];  // YYYY-MM-DD
@@ -42,7 +64,12 @@ const retrieveTodaysData = async () => {
   return await retrieveDataFromS3(bucketName, key);
 };
 
-// Lambda handler function
+/**
+ * AWS Lambda handler function
+ * @async
+ * @function handler
+ * @returns {Promise<Object>} Lambda response object with status code and data
+ */
 const handler = async () => {
   try {
     // Retrieve the latest data from S3
@@ -76,8 +103,6 @@ const handler = async () => {
     };
   }
 };
-
-exports.handler = handler;
 
 module.exports = {
   handler,

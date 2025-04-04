@@ -1,11 +1,23 @@
+/**
+ * Module for NBA team analysis and win probability calculation
+ * @module team-analyse
+ */
+
 const https = require('https')
 
 // May need to change API endpoint
 const DATA_RETRIEVAL_API =
-'https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/retrieve/'
+  'https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/retrieve/'
 // 'https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/dev/retrieve-dev'
 // process.env.DATA_RETRIEVAL_API
 
+/**
+ * Fetches team data from the data retrieval API
+ * @async
+ * @function fetchFromDataRetrievalApi
+ * @returns {Promise<Object>} The parsed JSON response from the API
+ * @throws {Error} If the API request fails or response cannot be parsed
+ */
 const fetchFromDataRetrievalApi = async () => {
   return new Promise((resolve, reject) => {
     try {
@@ -61,6 +73,13 @@ const fetchFromDataRetrievalApi = async () => {
   })
 }
 
+/**
+ * Finds a team's data in the API response
+ * @function findTeamData
+ * @param {Object} allTeams - The complete API response containing all teams data
+ * @param {string} teamName - The name of the team to find
+ * @returns {Object|null} The team data object if found, null otherwise
+ */
 const findTeamData = (allTeams, teamName) => {
   if (!allTeams || !allTeams.events || !Array.isArray(allTeams.events)) {
     console.error('Invalid ADAGE data structure:', JSON.stringify(allTeams))
@@ -84,6 +103,12 @@ const findTeamData = (allTeams, teamName) => {
   // )
 }
 
+/**
+ * Extracts and normalizes team statistics from team data
+ * @function extractTeamStats
+ * @param {Object} teamData - The team data object
+ * @returns {Object|null} Normalized team statistics with numeric values, or null if invalid data
+ */
 const extractTeamStats = teamData => {
   if (!teamData || !teamData.attributes) {
     return null
@@ -101,6 +126,13 @@ const extractTeamStats = teamData => {
   return stats
 }
 
+/**
+ * Compares statistics between two teams
+ * @function compareTeamStats
+ * @param {Object} team1Stats - Statistics for the first team
+ * @param {Object} team2Stats - Statistics for the second team
+ * @returns {Object} Differences in statistics (team1 - team2)
+ */
 const compareTeamStats = (team1Stats, team2Stats) => {
   console.log('Team 1 stats:', JSON.stringify(team1Stats))
   console.log('Team 2 stats:', JSON.stringify(team2Stats))
@@ -122,6 +154,14 @@ const compareTeamStats = (team1Stats, team2Stats) => {
   return differences
 }
 
+/**
+ * Calculates win probability based on statistical differences
+ * @function calculateWinProbability
+ * @param {Object} statDifferences - Object containing statistical differences between teams
+ * @returns {Object} Object containing win probabilities for both teams
+ * @property {number} team1Probability - Win probability for team1 (0-1)
+ * @property {number} team2Probability - Win probability for team2 (0-1)
+ */
 const calculateWinProbability = statDifferences => {
   let favorableStats = 0
   let totalStats = 0
@@ -149,6 +189,13 @@ const calculateWinProbability = statDifferences => {
   return { team1Probability, team2Probability }
 }
 
+/**
+ * Main handler function for the API
+ * @async
+ * @function handler
+ * @param {Object} event - The API Gateway event object
+ * @returns {Promise<Object>} API Gateway response object
+ */
 const handler = async event => {
   try {
     console.log('Request received:', JSON.stringify(event))
@@ -291,8 +338,7 @@ const handler = async event => {
   }
 }
 
-exports.handler = handler;
-
+// Export for both AWS Lambda and local usage/testing
 module.exports = {
   handler,
   findTeamData,
@@ -300,4 +346,4 @@ module.exports = {
   compareTeamStats,
   calculateWinProbability,
   fetchFromDataRetrievalApi
-};
+}

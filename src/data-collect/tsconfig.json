@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "target": "es2022",
+        "allowJs": true,
+        "checkJs": true,
+        "noEmit": true,
+        "resolveJsonModule": true,
+        "moduleResolution": "node",
+        "moduleDetection": "force",
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true
+    },
+    "include": [
+        "./*.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}
