@@ -6,6 +6,11 @@ on:
     branches: [main]
     types:
       - completed
+  workflow_dispatch:
+
+env:
+  TF_LOG: TRACE
+  TF_LOG_PATH: /tmp/terraform.log
 
 jobs:
   deploy:
@@ -38,15 +43,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.11.2
-
-      - name: Configure AWS credentials
-        run: |
-          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          echo "AWS credentials configured"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: |
@@ -56,20 +53,20 @@ jobs:
       - name: Terraform Import Existing Lambdas
         run: |
           cd terraform
-          
+
           terraform import aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "nba_scraper_lambda already imported"
           terraform import aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "nba_retriever_lambda already imported"
           terraform import aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "nba_analyse_lambda already imported"
 
       - name: Terraform Plan
-        id: plan
         run: |
           cd terraform
           terraform plan -input=false -out=tfplan \
             -var="aws_access_key_id=$AWS_ACCESS_KEY_ID" \
             -var="aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" \
             -var="s3_bucket_name=$BUCKET_NAME" \
-            -var="alert_email=$ALERT_EMAIL"
+            -var="alert_email=$ALERT_EMAIL" \
+            -parallelism=1
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -77,19 +74,26 @@ jobs:
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' # Only deploy on main branch
+        if: github.ref == 'refs/heads/main'
         run: |
           cd terraform
-          terraform apply -auto-approve -input=false tfplan
+          terraform apply -auto-approve -input=false -parallelism=1 tfplan
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
 
+      - name: Upload Terraform logs if apply hangs or fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-logs
+          path: /tmp/terraform.log
+          retention-days: 5
+
       - name: Cleanup
         if: always()
         run: |
           cd terraform
           rm -f lambda-deployment-package-*.zip tfplan
-          echo "Cleanup completed"
