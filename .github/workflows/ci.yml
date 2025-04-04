@@ -76,6 +76,11 @@ jobs:
       - name: Setup Pandoc
         uses: r-lib/actions/setup-pandoc@v2
 
+      - name: Install PDF engine
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+
       - name: Convert report to PDF
         run: |
           pandoc test-report-${{ matrix.service }}.md -o test-report-${{ matrix.service }}.pdf
