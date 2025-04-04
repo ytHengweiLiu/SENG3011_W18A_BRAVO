@@ -2,7 +2,7 @@ name: Continuous Deployment
 
 on:
   workflow_run:
-    workflows: ["Test"]
+    workflows: ["Continuous Integration"]
     branches: [main]
     types:
       - completed
@@ -11,12 +11,12 @@ on:
 env:
   TF_LOG: INFO
   AWS_REGION: us-east-1
-  TF_IN_AUTOMATION: "true" # This tells Terraform it's running in automation mode
+  TF_IN_AUTOMATION: "true"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
