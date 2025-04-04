@@ -29,6 +29,9 @@ jobs:
       - name: Run linting
         run: cd src/${{ matrix.service }} && npm run lint
 
+      - name: Run typechecking
+        run: cd src/${{ matrix.service }} && npm run typecheck
+
       - name: Run tests with coverage
         run: cd src/${{ matrix.service }} && npm run test
 

@@ -1,0 +1,2019 @@
+{
+  "version": 4,
+  "terraform_version": "1.5.7",
+  "serial": 185,
+  "lineage": "72f5d571-c94c-b5d1-83dd-e47d74eb710a",
+  "outputs": {
+    "api_url": {
+      "value": "https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/dev",
+      "type": "string"
+    },
+    "lambda_arn": {
+      "value": "arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda-dev",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "data",
+      "type": "aws_iam_policy",
+      "name": "lambda_s3_access_policy",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::851725446831:policy/LambdaS3AccessPolicy",
+            "attachment_count": 1,
+            "description": "Allow Lambda to access S3 bucket",
+            "id": "arn:aws:iam::851725446831:policy/LambdaS3AccessPolicy",
+            "name": "LambdaS3AccessPolicy",
+            "path": "/",
+            "path_prefix": null,
+            "policy": "{\"Statement\":[{\"Action\":[\"s3:ListBucket\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::nba-prediction-bucket-seng3011\"]},{\"Action\":[\"s3:GetObject\",\"s3:PutObject\"],\"Effect\":\"Allow\",\"Resource\":[\"arn:aws:s3:::nba-prediction-bucket-seng3011/*\"]}],\"Version\":\"2012-10-17\"}",
+            "policy_id": "ANPA4MTWK52X6LHRAGN3I",
+            "tags": {}
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "aws_iam_role",
+      "name": "lambda_exec_role",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:iam::851725446831:role/lambda_exec_role",
+            "assume_role_policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}",
+            "create_date": "2025-03-14T10:15:26Z",
+            "description": "",
+            "id": "lambda_exec_role",
+            "max_session_duration": 3600,
+            "name": "lambda_exec_role",
+            "path": "/",
+            "permissions_boundary": "",
+            "role_last_used": [
+              {
+                "last_used_date": "2025-04-04T04:31:20Z",
+                "region": "us-east-1"
+              }
+            ],
+            "tags": {},
+            "unique_id": "AROA4MTWK52XTLNJTXJXS"
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    },
+    {
+      "mode": "data",
+      "type": "aws_s3_bucket",
+      "name": "nba_prediction_bucket",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:s3:::nba-prediction-bucket-seng3011",
+            "bucket": "nba-prediction-bucket-seng3011",
+            "bucket_domain_name": "nba-prediction-bucket-seng3011.s3.amazonaws.com",
+            "bucket_regional_domain_name": "nba-prediction-bucket-seng3011.s3.us-east-1.amazonaws.com",
+            "hosted_zone_id": "Z3AQBSTGFYJSTF",
+            "id": "nba-prediction-bucket-seng3011",
+            "region": "us-east-1",
+            "website_domain": null,
+            "website_endpoint": null
+          },
+          "sensitive_attributes": []
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_deployment",
+      "name": "nba_prediction_deployment",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "canary_settings": [],
+            "created_date": "2025-03-17T18:59:02Z",
+            "description": "",
+            "execution_arn": "arn:aws:execute-api:us-east-1:851725446831:j25ls96ohb/",
+            "id": "cewf8b",
+            "invoke_url": "https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/",
+            "rest_api_id": "j25ls96ohb",
+            "stage_description": null,
+            "stage_name": null,
+            "triggers": null,
+            "variables": null
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_integration.analyse_integration",
+            "aws_api_gateway_integration.retrieve_integration",
+            "aws_api_gateway_integration.scrape_integration",
+            "aws_api_gateway_integration_response.analyse_options_integration_response",
+            "aws_api_gateway_integration_response.retrieve_options_integration_response",
+            "aws_api_gateway_integration_response.scrape_options_integration_response",
+            "aws_api_gateway_method.analyse_method",
+            "aws_api_gateway_method.analyse_options_method",
+            "aws_api_gateway_method.retrieve_method",
+            "aws_api_gateway_method.retrieve_options_method",
+            "aws_api_gateway_method.scrape_method",
+            "aws_api_gateway_method.scrape_options_method",
+            "aws_api_gateway_method_response.analyse_method_response",
+            "aws_api_gateway_method_response.retrieve_options_response",
+            "aws_api_gateway_method_response.scrape_options_response",
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_analyse_lambda",
+            "aws_lambda_function.nba_retriever_lambda",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration",
+      "name": "analyse_integration",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cache_key_parameters": [],
+            "cache_namespace": "alndcw",
+            "connection_id": "",
+            "connection_type": "INTERNET",
+            "content_handling": "",
+            "credentials": "",
+            "http_method": "POST",
+            "id": "agi-j25ls96ohb-alndcw-POST",
+            "integration_http_method": "POST",
+            "passthrough_behavior": "WHEN_NO_MATCH",
+            "request_parameters": {},
+            "request_templates": {},
+            "resource_id": "alndcw",
+            "rest_api_id": "j25ls96ohb",
+            "timeout_milliseconds": 29000,
+            "tls_config": [],
+            "type": "AWS_PROXY",
+            "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda-dev/invocations"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.analyse_method",
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_analyse_lambda",
+            "data.aws_iam_role.lambda_exec_role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration",
+      "name": "analyse_options_integration",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cache_key_parameters": [],
+            "cache_namespace": "alndcw",
+            "connection_id": "",
+            "connection_type": "INTERNET",
+            "content_handling": "",
+            "credentials": "",
+            "http_method": "OPTIONS",
+            "id": "agi-j25ls96ohb-alndcw-OPTIONS",
+            "integration_http_method": "",
+            "passthrough_behavior": "WHEN_NO_MATCH",
+            "request_parameters": {},
+            "request_templates": {
+              "application/json": "{\"statusCode\": 200}"
+            },
+            "resource_id": "alndcw",
+            "rest_api_id": "j25ls96ohb",
+            "timeout_milliseconds": 29000,
+            "tls_config": [],
+            "type": "MOCK",
+            "uri": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.analyse_options_method",
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration",
+      "name": "retrieve_integration",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cache_key_parameters": [],
+            "cache_namespace": "q7vrlc",
+            "connection_id": "",
+            "connection_type": "INTERNET",
+            "content_handling": "",
+            "credentials": "",
+            "http_method": "GET",
+            "id": "agi-j25ls96ohb-q7vrlc-GET",
+            "integration_http_method": "POST",
+            "passthrough_behavior": "WHEN_NO_MATCH",
+            "request_parameters": {},
+            "request_templates": {},
+            "resource_id": "q7vrlc",
+            "rest_api_id": "j25ls96ohb",
+            "timeout_milliseconds": 29000,
+            "tls_config": [],
+            "type": "AWS_PROXY",
+            "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda-dev/invocations"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.retrieve_method",
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_retriever_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration",
+      "name": "retrieve_options_integration",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cache_key_parameters": [],
+            "cache_namespace": "q7vrlc",
+            "connection_id": "",
+            "connection_type": "INTERNET",
+            "content_handling": "",
+            "credentials": "",
+            "http_method": "OPTIONS",
+            "id": "agi-j25ls96ohb-q7vrlc-OPTIONS",
+            "integration_http_method": "",
+            "passthrough_behavior": "WHEN_NO_MATCH",
+            "request_parameters": {},
+            "request_templates": {
+              "application/json": "{\"statusCode\":200}"
+            },
+            "resource_id": "q7vrlc",
+            "rest_api_id": "j25ls96ohb",
+            "timeout_milliseconds": 29000,
+            "tls_config": [],
+            "type": "MOCK",
+            "uri": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.retrieve_options_method",
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration",
+      "name": "scrape_integration",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cache_key_parameters": [],
+            "cache_namespace": "t3lan6",
+            "connection_id": "",
+            "connection_type": "INTERNET",
+            "content_handling": "",
+            "credentials": "",
+            "http_method": "GET",
+            "id": "agi-j25ls96ohb-t3lan6-GET",
+            "integration_http_method": "POST",
+            "passthrough_behavior": "WHEN_NO_MATCH",
+            "request_parameters": {},
+            "request_templates": {},
+            "resource_id": "t3lan6",
+            "rest_api_id": "j25ls96ohb",
+            "timeout_milliseconds": 29000,
+            "tls_config": [],
+            "type": "AWS_PROXY",
+            "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda-dev/invocations"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.scrape_method",
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration",
+      "name": "scrape_options_integration",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cache_key_parameters": [],
+            "cache_namespace": "t3lan6",
+            "connection_id": "",
+            "connection_type": "INTERNET",
+            "content_handling": "",
+            "credentials": "",
+            "http_method": "OPTIONS",
+            "id": "agi-j25ls96ohb-t3lan6-OPTIONS",
+            "integration_http_method": "",
+            "passthrough_behavior": "WHEN_NO_MATCH",
+            "request_parameters": {},
+            "request_templates": {
+              "application/json": "{\"statusCode\":200}"
+            },
+            "resource_id": "t3lan6",
+            "rest_api_id": "j25ls96ohb",
+            "timeout_milliseconds": 29000,
+            "tls_config": [],
+            "type": "MOCK",
+            "uri": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.scrape_options_method",
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration_response",
+      "name": "analyse_options_integration_response",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "content_handling": "",
+            "http_method": "OPTIONS",
+            "id": "agir-j25ls96ohb-alndcw-OPTIONS-200",
+            "resource_id": "alndcw",
+            "response_parameters": {
+              "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+              "method.response.header.Access-Control-Allow-Methods": "'POST,OPTIONS'",
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            },
+            "response_templates": {
+              "application/json": ""
+            },
+            "rest_api_id": "j25ls96ohb",
+            "selection_pattern": "",
+            "status_code": "200"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_integration.analyse_integration",
+            "aws_api_gateway_method.analyse_method",
+            "aws_api_gateway_method.analyse_options_method",
+            "aws_api_gateway_method_response.analyse_method_response",
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_analyse_lambda",
+            "data.aws_iam_role.lambda_exec_role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration_response",
+      "name": "retrieve_options_integration_response",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "content_handling": "",
+            "http_method": "OPTIONS",
+            "id": "agir-j25ls96ohb-q7vrlc-OPTIONS-200",
+            "resource_id": "q7vrlc",
+            "response_parameters": {
+              "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+              "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'",
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            },
+            "response_templates": {},
+            "rest_api_id": "j25ls96ohb",
+            "selection_pattern": "",
+            "status_code": "200"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.retrieve_options_method",
+            "aws_api_gateway_method_response.retrieve_options_response",
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_integration_response",
+      "name": "scrape_options_integration_response",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "content_handling": "",
+            "http_method": "OPTIONS",
+            "id": "agir-j25ls96ohb-t3lan6-OPTIONS-200",
+            "resource_id": "t3lan6",
+            "response_parameters": {
+              "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+              "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            },
+            "response_templates": {},
+            "rest_api_id": "j25ls96ohb",
+            "selection_pattern": "",
+            "status_code": "200"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.scrape_options_method",
+            "aws_api_gateway_method_response.scrape_options_response",
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method",
+      "name": "analyse_method",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "api_key_required": false,
+            "authorization": "NONE",
+            "authorization_scopes": [],
+            "authorizer_id": "",
+            "http_method": "POST",
+            "id": "agm-j25ls96ohb-alndcw-POST",
+            "operation_name": "",
+            "request_models": {},
+            "request_parameters": {},
+            "request_validator_id": "",
+            "resource_id": "alndcw",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method",
+      "name": "analyse_options_method",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "api_key_required": false,
+            "authorization": "NONE",
+            "authorization_scopes": [],
+            "authorizer_id": "",
+            "http_method": "OPTIONS",
+            "id": "agm-j25ls96ohb-alndcw-OPTIONS",
+            "operation_name": "",
+            "request_models": {},
+            "request_parameters": {},
+            "request_validator_id": "",
+            "resource_id": "alndcw",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method",
+      "name": "retrieve_method",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "api_key_required": false,
+            "authorization": "NONE",
+            "authorization_scopes": [],
+            "authorizer_id": "",
+            "http_method": "GET",
+            "id": "agm-j25ls96ohb-q7vrlc-GET",
+            "operation_name": "",
+            "request_models": {},
+            "request_parameters": {},
+            "request_validator_id": "",
+            "resource_id": "q7vrlc",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method",
+      "name": "retrieve_options_method",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "api_key_required": false,
+            "authorization": "NONE",
+            "authorization_scopes": [],
+            "authorizer_id": "",
+            "http_method": "OPTIONS",
+            "id": "agm-j25ls96ohb-q7vrlc-OPTIONS",
+            "operation_name": "",
+            "request_models": {},
+            "request_parameters": {},
+            "request_validator_id": "",
+            "resource_id": "q7vrlc",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method",
+      "name": "scrape_method",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "api_key_required": false,
+            "authorization": "NONE",
+            "authorization_scopes": [],
+            "authorizer_id": "",
+            "http_method": "GET",
+            "id": "agm-j25ls96ohb-t3lan6-GET",
+            "operation_name": "",
+            "request_models": {},
+            "request_parameters": {},
+            "request_validator_id": "",
+            "resource_id": "t3lan6",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method",
+      "name": "scrape_options_method",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "api_key_required": false,
+            "authorization": "NONE",
+            "authorization_scopes": [],
+            "authorizer_id": "",
+            "http_method": "OPTIONS",
+            "id": "agm-j25ls96ohb-t3lan6-OPTIONS",
+            "operation_name": "",
+            "request_models": {},
+            "request_parameters": {},
+            "request_validator_id": "",
+            "resource_id": "t3lan6",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method_response",
+      "name": "analyse_method_response",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "http_method": "OPTIONS",
+            "id": "agmr-j25ls96ohb-alndcw-OPTIONS-200",
+            "resource_id": "alndcw",
+            "response_models": {
+              "application/json": "Empty"
+            },
+            "response_parameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true
+            },
+            "rest_api_id": "j25ls96ohb",
+            "status_code": "200"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.analyse_options_method",
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method_response",
+      "name": "retrieve_options_response",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "http_method": "OPTIONS",
+            "id": "agmr-j25ls96ohb-q7vrlc-OPTIONS-200",
+            "resource_id": "q7vrlc",
+            "response_models": {
+              "application/json": "Empty"
+            },
+            "response_parameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true
+            },
+            "rest_api_id": "j25ls96ohb",
+            "status_code": "200"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.retrieve_options_method",
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_method_response",
+      "name": "scrape_options_response",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "http_method": "OPTIONS",
+            "id": "agmr-j25ls96ohb-t3lan6-OPTIONS-200",
+            "resource_id": "t3lan6",
+            "response_models": {
+              "application/json": "Empty"
+            },
+            "response_parameters": {
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Origin": true
+            },
+            "rest_api_id": "j25ls96ohb",
+            "status_code": "200"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_method.scrape_options_method",
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_resource",
+      "name": "analyse",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "alndcw",
+            "parent_id": "8wwno225w5",
+            "path": "/analyse-dev",
+            "path_part": "analyse-dev",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_resource",
+      "name": "retrieve",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "q7vrlc",
+            "parent_id": "8wwno225w5",
+            "path": "/retrieve-dev",
+            "path_part": "retrieve-dev",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_resource",
+      "name": "scrape",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "t3lan6",
+            "parent_id": "8wwno225w5",
+            "path": "/scrape-dev",
+            "path_part": "scrape-dev",
+            "rest_api_id": "j25ls96ohb"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_rest_api",
+      "name": "nba_prediction_api",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "api_key_source": "HEADER",
+            "arn": "arn:aws:apigateway:us-east-1::/restapis/j25ls96ohb",
+            "binary_media_types": [],
+            "body": null,
+            "created_date": "2025-03-17T18:52:17Z",
+            "description": "API Gateway for NBA Prediction Lambda",
+            "disable_execute_api_endpoint": false,
+            "endpoint_configuration": [
+              {
+                "types": [
+                  "EDGE"
+                ],
+                "vpc_endpoint_ids": []
+              }
+            ],
+            "execution_arn": "arn:aws:execute-api:us-east-1:851725446831:j25ls96ohb",
+            "fail_on_warnings": null,
+            "id": "j25ls96ohb",
+            "minimum_compression_size": "",
+            "name": "nba-prediction-api-dev",
+            "parameters": null,
+            "policy": "",
+            "put_rest_api_mode": null,
+            "root_resource_id": "8wwno225w5",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_api_gateway_stage",
+      "name": "nba_prediction_stage",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "access_log_settings": [],
+            "arn": "arn:aws:apigateway:us-east-1::/restapis/j25ls96ohb/stages/dev",
+            "cache_cluster_enabled": false,
+            "cache_cluster_size": "",
+            "canary_settings": [],
+            "client_certificate_id": "",
+            "deployment_id": "cewf8b",
+            "description": "",
+            "documentation_version": "",
+            "execution_arn": "arn:aws:execute-api:us-east-1:851725446831:j25ls96ohb/dev",
+            "id": "ags-j25ls96ohb-dev",
+            "invoke_url": "https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/dev",
+            "rest_api_id": "j25ls96ohb",
+            "stage_name": "dev",
+            "tags": {},
+            "tags_all": {},
+            "variables": {},
+            "web_acl_arn": "",
+            "xray_tracing_enabled": false
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_deployment.nba_prediction_deployment",
+            "aws_api_gateway_integration.analyse_integration",
+            "aws_api_gateway_integration.retrieve_integration",
+            "aws_api_gateway_integration.scrape_integration",
+            "aws_api_gateway_integration_response.analyse_options_integration_response",
+            "aws_api_gateway_integration_response.retrieve_options_integration_response",
+            "aws_api_gateway_integration_response.scrape_options_integration_response",
+            "aws_api_gateway_method.analyse_method",
+            "aws_api_gateway_method.analyse_options_method",
+            "aws_api_gateway_method.retrieve_method",
+            "aws_api_gateway_method.retrieve_options_method",
+            "aws_api_gateway_method.scrape_method",
+            "aws_api_gateway_method.scrape_options_method",
+            "aws_api_gateway_method_response.analyse_method_response",
+            "aws_api_gateway_method_response.retrieve_options_response",
+            "aws_api_gateway_method_response.scrape_options_response",
+            "aws_api_gateway_resource.analyse",
+            "aws_api_gateway_resource.retrieve",
+            "aws_api_gateway_resource.scrape",
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_analyse_lambda",
+            "aws_lambda_function.nba_retriever_lambda",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_dashboard",
+      "name": "nba_api_dashboard",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "dashboard_arn": "arn:aws:cloudwatch::851725446831:dashboard/nba-api-dashboard-dev",
+            "dashboard_body": "{\"widgets\":[{\"height\":6,\"properties\":{\"metrics\":[[\"AWS/Lambda\",\"Invocations\",\"FunctionName\",\"nba-scraper-lambda-dev\"],[\"AWS/Lambda\",\"Invocations\",\"FunctionName\",\"nba-retriever-lambda-dev\"],[\"AWS/Lambda\",\"Invocations\",\"FunctionName\",\"nba-analyse-lambda-dev\"]],\"period\":300,\"region\":\"us-east-1\",\"stat\":\"Sum\",\"title\":\"Lambda Invocations\"},\"type\":\"metric\",\"width\":12,\"x\":0,\"y\":0},{\"height\":6,\"properties\":{\"metrics\":[[\"AWS/Lambda\",\"Errors\",\"FunctionName\",\"nba-scraper-lambda-dev\"],[\"AWS/Lambda\",\"Errors\",\"FunctionName\",\"nba-retriever-lambda-dev\"],[\"AWS/Lambda\",\"Errors\",\"FunctionName\",\"nba-analyse-lambda-dev\"]],\"period\":300,\"region\":\"us-east-1\",\"stat\":\"Sum\",\"title\":\"Lambda Errors\"},\"type\":\"metric\",\"width\":12,\"x\":0,\"y\":6},{\"height\":6,\"properties\":{\"metrics\":[[\"AWS/Lambda\",\"Duration\",\"FunctionName\",\"nba-scraper-lambda-dev\"],[\"AWS/Lambda\",\"Duration\",\"FunctionName\",\"nba-retriever-lambda-dev\"],[\"AWS/Lambda\",\"Duration\",\"FunctionName\",\"nba-analyse-lambda-dev\"]],\"period\":300,\"region\":\"us-east-1\",\"stat\":\"Average\",\"title\":\"Lambda Duration (ms)\"},\"type\":\"metric\",\"width\":12,\"x\":0,\"y\":12},{\"height\":6,\"properties\":{\"metrics\":[[\"AWS/ApiGateway\",\"Count\",\"ApiName\",\"nba-prediction-api-dev\"]],\"period\":300,\"region\":\"us-east-1\",\"stat\":\"Sum\",\"title\":\"API Requests\"},\"type\":\"metric\",\"width\":12,\"x\":12,\"y\":0},{\"height\":6,\"properties\":{\"metrics\":[[\"AWS/ApiGateway\",\"4XXError\",\"ApiName\",\"nba-prediction-api-dev\"],[\"AWS/ApiGateway\",\"5XXError\",\"ApiName\",\"nba-prediction-api-dev\"]],\"period\":300,\"region\":\"us-east-1\",\"stat\":\"Sum\",\"title\":\"API Errors\"},\"type\":\"metric\",\"width\":12,\"x\":12,\"y\":6}]}",
+            "dashboard_name": "nba-api-dashboard-dev",
+            "id": "nba-api-dashboard-dev"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_analyse_lambda",
+            "aws_lambda_function.nba_retriever_lambda",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_event_rule",
+      "name": "daily_scraper_trigger",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:events:us-east-1:851725446831:rule/daily-scraper-trigger-dev",
+            "description": "Trigger the NBA scraper Lambda function daily (dev)",
+            "event_bus_name": "default",
+            "event_pattern": null,
+            "force_destroy": false,
+            "id": "daily-scraper-trigger-dev",
+            "is_enabled": true,
+            "name": "daily-scraper-trigger-dev",
+            "name_prefix": "",
+            "role_arn": "",
+            "schedule_expression": "cron(0 1 * * ? *)",
+            "state": "ENABLED",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_event_target",
+      "name": "invoke_scraper_lambda",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "appsync_target": [],
+            "arn": "arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda-dev",
+            "batch_target": [],
+            "dead_letter_config": [],
+            "ecs_target": [],
+            "event_bus_name": "default",
+            "force_destroy": false,
+            "http_target": [],
+            "id": "daily-scraper-trigger-dev-InvokeScraperLambda",
+            "input": "",
+            "input_path": "",
+            "input_transformer": [],
+            "kinesis_target": [],
+            "redshift_target": [],
+            "retry_policy": [],
+            "role_arn": "",
+            "rule": "daily-scraper-trigger-dev",
+            "run_command_targets": [],
+            "sagemaker_pipeline_target": [],
+            "sqs_target": [],
+            "target_id": "InvokeScraperLambda"
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_cloudwatch_event_rule.daily_scraper_trigger",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_log_group",
+      "name": "analyser_logs",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:logs:us-east-1:851725446831:log-group:/aws/lambda/nba-analyse-lambda-dev",
+            "id": "/aws/lambda/nba-analyse-lambda-dev",
+            "kms_key_id": "",
+            "log_group_class": "STANDARD",
+            "name": "/aws/lambda/nba-analyse-lambda-dev",
+            "name_prefix": "",
+            "retention_in_days": 14,
+            "skip_destroy": false,
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_lambda_function.nba_analyse_lambda",
+            "data.aws_iam_role.lambda_exec_role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_log_group",
+      "name": "retriever_logs",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:logs:us-east-1:851725446831:log-group:/aws/lambda/nba-retriever-lambda-dev",
+            "id": "/aws/lambda/nba-retriever-lambda-dev",
+            "kms_key_id": "",
+            "log_group_class": "STANDARD",
+            "name": "/aws/lambda/nba-retriever-lambda-dev",
+            "name_prefix": "",
+            "retention_in_days": 14,
+            "skip_destroy": false,
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_lambda_function.nba_retriever_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_log_group",
+      "name": "scraper_logs",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:logs:us-east-1:851725446831:log-group:/aws/lambda/nba-scraper-lambda-dev",
+            "id": "/aws/lambda/nba-scraper-lambda-dev",
+            "kms_key_id": "",
+            "log_group_class": "STANDARD",
+            "name": "/aws/lambda/nba-scraper-lambda-dev",
+            "name_prefix": "",
+            "retention_in_days": 14,
+            "skip_destroy": false,
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_metric_alarm",
+      "name": "api_5xx_error_alarm",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "actions_enabled": true,
+            "alarm_actions": [
+              "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev"
+            ],
+            "alarm_description": "This alarm monitors for 5XX errors in the API Gateway",
+            "alarm_name": "api-5xx-error-alarm-dev",
+            "arn": "arn:aws:cloudwatch:us-east-1:851725446831:alarm:api-5xx-error-alarm-dev",
+            "comparison_operator": "GreaterThanThreshold",
+            "datapoints_to_alarm": 0,
+            "dimensions": {
+              "ApiName": "nba-prediction-api-dev"
+            },
+            "evaluate_low_sample_count_percentiles": "",
+            "evaluation_periods": 1,
+            "extended_statistic": "",
+            "id": "api-5xx-error-alarm-dev",
+            "insufficient_data_actions": [],
+            "metric_name": "5XXError",
+            "metric_query": [],
+            "namespace": "AWS/ApiGateway",
+            "ok_actions": [],
+            "period": 300,
+            "statistic": "Sum",
+            "tags": {},
+            "tags_all": {},
+            "threshold": 0,
+            "threshold_metric_id": "",
+            "treat_missing_data": "missing",
+            "unit": ""
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_sns_topic.lambda_alerts"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_metric_alarm",
+      "name": "lambda_error_alarm",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "analyser",
+          "schema_version": 1,
+          "attributes": {
+            "actions_enabled": true,
+            "alarm_actions": [
+              "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev"
+            ],
+            "alarm_description": "This alarm monitors for errors in the nba-analyse-lambda-dev function",
+            "alarm_name": "nba-analyse-lambda-dev-error-alarm-dev",
+            "arn": "arn:aws:cloudwatch:us-east-1:851725446831:alarm:nba-analyse-lambda-dev-error-alarm-dev",
+            "comparison_operator": "GreaterThanThreshold",
+            "datapoints_to_alarm": 0,
+            "dimensions": {
+              "FunctionName": "nba-analyse-lambda-dev"
+            },
+            "evaluate_low_sample_count_percentiles": "",
+            "evaluation_periods": 1,
+            "extended_statistic": "",
+            "id": "nba-analyse-lambda-dev-error-alarm-dev",
+            "insufficient_data_actions": [],
+            "metric_name": "Errors",
+            "metric_query": [],
+            "namespace": "AWS/Lambda",
+            "ok_actions": [],
+            "period": 300,
+            "statistic": "Sum",
+            "tags": {},
+            "tags_all": {},
+            "threshold": 0,
+            "threshold_metric_id": "",
+            "treat_missing_data": "missing",
+            "unit": ""
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_lambda_function.nba_analyse_lambda",
+            "aws_lambda_function.nba_retriever_lambda",
+            "aws_lambda_function.nba_scraper_lambda",
+            "aws_sns_topic.lambda_alerts",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        },
+        {
+          "index_key": "retriever",
+          "schema_version": 1,
+          "attributes": {
+            "actions_enabled": true,
+            "alarm_actions": [
+              "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev"
+            ],
+            "alarm_description": "This alarm monitors for errors in the nba-retriever-lambda-dev function",
+            "alarm_name": "nba-retriever-lambda-dev-error-alarm-dev",
+            "arn": "arn:aws:cloudwatch:us-east-1:851725446831:alarm:nba-retriever-lambda-dev-error-alarm-dev",
+            "comparison_operator": "GreaterThanThreshold",
+            "datapoints_to_alarm": 0,
+            "dimensions": {
+              "FunctionName": "nba-retriever-lambda-dev"
+            },
+            "evaluate_low_sample_count_percentiles": "",
+            "evaluation_periods": 1,
+            "extended_statistic": "",
+            "id": "nba-retriever-lambda-dev-error-alarm-dev",
+            "insufficient_data_actions": [],
+            "metric_name": "Errors",
+            "metric_query": [],
+            "namespace": "AWS/Lambda",
+            "ok_actions": [],
+            "period": 300,
+            "statistic": "Sum",
+            "tags": {},
+            "tags_all": {},
+            "threshold": 0,
+            "threshold_metric_id": "",
+            "treat_missing_data": "missing",
+            "unit": ""
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_lambda_function.nba_analyse_lambda",
+            "aws_lambda_function.nba_retriever_lambda",
+            "aws_lambda_function.nba_scraper_lambda",
+            "aws_sns_topic.lambda_alerts",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        },
+        {
+          "index_key": "scraper",
+          "schema_version": 1,
+          "attributes": {
+            "actions_enabled": true,
+            "alarm_actions": [
+              "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev"
+            ],
+            "alarm_description": "This alarm monitors for errors in the nba-scraper-lambda-dev function",
+            "alarm_name": "nba-scraper-lambda-dev-error-alarm-dev",
+            "arn": "arn:aws:cloudwatch:us-east-1:851725446831:alarm:nba-scraper-lambda-dev-error-alarm-dev",
+            "comparison_operator": "GreaterThanThreshold",
+            "datapoints_to_alarm": 0,
+            "dimensions": {
+              "FunctionName": "nba-scraper-lambda-dev"
+            },
+            "evaluate_low_sample_count_percentiles": "",
+            "evaluation_periods": 1,
+            "extended_statistic": "",
+            "id": "nba-scraper-lambda-dev-error-alarm-dev",
+            "insufficient_data_actions": [],
+            "metric_name": "Errors",
+            "metric_query": [],
+            "namespace": "AWS/Lambda",
+            "ok_actions": [],
+            "period": 300,
+            "statistic": "Sum",
+            "tags": {},
+            "tags_all": {},
+            "threshold": 0,
+            "threshold_metric_id": "",
+            "treat_missing_data": "missing",
+            "unit": ""
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_lambda_function.nba_analyse_lambda",
+            "aws_lambda_function.nba_retriever_lambda",
+            "aws_lambda_function.nba_scraper_lambda",
+            "aws_sns_topic.lambda_alerts",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_query_definition",
+      "name": "lambda_error_query",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "62dd9d6e-45b4-4733-af51-58310666fa4e",
+            "log_group_names": [
+              "/aws/lambda/nba-scraper-lambda-dev",
+              "/aws/lambda/nba-retriever-lambda-dev",
+              "/aws/lambda/nba-analyse-lambda-dev"
+            ],
+            "name": "NBA API Lambda Errors-dev",
+            "query_definition_id": "62dd9d6e-45b4-4733-af51-58310666fa4e",
+            "query_string": "fields @timestamp, @message\n| filter @message like /Error/\n| sort @timestamp desc\n| limit 20\n"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_cloudwatch_log_group.analyser_logs",
+            "aws_cloudwatch_log_group.retriever_logs",
+            "aws_cloudwatch_log_group.scraper_logs",
+            "aws_lambda_function.nba_analyse_lambda",
+            "aws_lambda_function.nba_retriever_lambda",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_role_policy_attachment",
+      "name": "lambda_basic_execution",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "lambda_exec_role-20250404054857334300000002",
+            "policy_arn": "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+            "role": "lambda_exec_role"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "data.aws_iam_role.lambda_exec_role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_iam_role_policy_attachment",
+      "name": "lambda_s3_access",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "lambda_exec_role-20250404054857324900000001",
+            "policy_arn": "arn:aws:iam::851725446831:policy/LambdaS3AccessPolicy",
+            "role": "lambda_exec_role"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "data.aws_iam_policy.lambda_s3_access_policy",
+            "data.aws_iam_role.lambda_exec_role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_function",
+      "name": "nba_analyse_lambda",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "architectures": [
+              "x86_64"
+            ],
+            "arn": "arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda-dev",
+            "code_sha256": "2+64gwUbuuzPYkfW0zt6HGeNA3Pmc0J1mlZ645ZeKWs=",
+            "code_signing_config_arn": "",
+            "dead_letter_config": [],
+            "description": "",
+            "environment": [
+              {
+                "variables": {
+                  "DATA_RETRIEVAL_API": "https://j25ls96ohb.execute-api.us-east-1.amazonaws.com/prod/retrieve-dev"
+                }
+              }
+            ],
+            "ephemeral_storage": [
+              {
+                "size": 512
+              }
+            ],
+            "file_system_config": [],
+            "filename": "lambda-deployment-package-analyse-dev.zip",
+            "function_name": "nba-analyse-lambda-dev",
+            "handler": "team-analyse.handler",
+            "id": "nba-analyse-lambda-dev",
+            "image_config": [],
+            "image_uri": "",
+            "invoke_arn": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda-dev/invocations",
+            "kms_key_arn": "",
+            "last_modified": "2025-04-04T05:52:42.000+0000",
+            "layers": [],
+            "logging_config": [
+              {
+                "application_log_level": "",
+                "log_format": "Text",
+                "log_group": "/aws/lambda/nba-analyse-lambda-dev",
+                "system_log_level": ""
+              }
+            ],
+            "memory_size": 128,
+            "package_type": "Zip",
+            "publish": false,
+            "qualified_arn": "arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda-dev:$LATEST",
+            "qualified_invoke_arn": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda-dev:$LATEST/invocations",
+            "replace_security_groups_on_destroy": null,
+            "replacement_security_group_ids": null,
+            "reserved_concurrent_executions": -1,
+            "role": "arn:aws:iam::851725446831:role/lambda_exec_role",
+            "runtime": "nodejs18.x",
+            "s3_bucket": null,
+            "s3_key": null,
+            "s3_object_version": null,
+            "signing_job_arn": "",
+            "signing_profile_version_arn": "",
+            "skip_destroy": false,
+            "snap_start": [],
+            "source_code_hash": "2+64gwUbuuzPYkfW0zt6HGeNA3Pmc0J1mlZ645ZeKWs=",
+            "source_code_size": 14112861,
+            "tags": {},
+            "tags_all": {},
+            "timeout": 29,
+            "timeouts": null,
+            "tracing_config": [
+              {
+                "mode": "PassThrough"
+              }
+            ],
+            "version": "$LATEST",
+            "vpc_config": []
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "data.aws_iam_role.lambda_exec_role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_function",
+      "name": "nba_retriever_lambda",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "architectures": [
+              "x86_64"
+            ],
+            "arn": "arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda-dev",
+            "code_sha256": "3JZ2qKiMGDx/9d3gLuiRpsxblDENa9ismgf49JdXJcE=",
+            "code_signing_config_arn": "",
+            "dead_letter_config": [],
+            "description": "",
+            "environment": [
+              {
+                "variables": {
+                  "S3_BUCKET_NAME": "nba-prediction-bucket-seng3011",
+                  "S3_FILE_PREFIX": "nba-stats-dev"
+                }
+              }
+            ],
+            "ephemeral_storage": [
+              {
+                "size": 512
+              }
+            ],
+            "file_system_config": [],
+            "filename": "lambda-deployment-package-retrieve-dev.zip",
+            "function_name": "nba-retriever-lambda-dev",
+            "handler": "data-retrieve.handler",
+            "id": "nba-retriever-lambda-dev",
+            "image_config": [],
+            "image_uri": "",
+            "invoke_arn": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda-dev/invocations",
+            "kms_key_arn": "",
+            "last_modified": "2025-04-04T04:15:45.000+0000",
+            "layers": [],
+            "logging_config": [
+              {
+                "application_log_level": "",
+                "log_format": "Text",
+                "log_group": "/aws/lambda/nba-retriever-lambda-dev",
+                "system_log_level": ""
+              }
+            ],
+            "memory_size": 128,
+            "package_type": "Zip",
+            "publish": false,
+            "qualified_arn": "arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda-dev:$LATEST",
+            "qualified_invoke_arn": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda-dev:$LATEST/invocations",
+            "replace_security_groups_on_destroy": null,
+            "replacement_security_group_ids": null,
+            "reserved_concurrent_executions": -1,
+            "role": "arn:aws:iam::851725446831:role/lambda_exec_role-dev",
+            "runtime": "nodejs18.x",
+            "s3_bucket": null,
+            "s3_key": null,
+            "s3_object_version": null,
+            "signing_job_arn": "",
+            "signing_profile_version_arn": "",
+            "skip_destroy": false,
+            "snap_start": [],
+            "source_code_hash": "3JZ2qKiMGDx/9d3gLuiRpsxblDENa9ismgf49JdXJcE=",
+            "source_code_size": 15460196,
+            "tags": {},
+            "tags_all": {},
+            "timeout": 3,
+            "timeouts": null,
+            "tracing_config": [
+              {
+                "mode": "PassThrough"
+              }
+            ],
+            "version": "$LATEST",
+            "vpc_config": []
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "aws_iam_role.lambda_exec_role",
+            "aws_s3_bucket.nba_prediction_bucket",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_function",
+      "name": "nba_scraper_lambda",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "architectures": [
+              "x86_64"
+            ],
+            "arn": "arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda-dev",
+            "code_sha256": "Fn9tUAq5srPSMiLc6g5PRCBFVlHFCZ/vkMwUcB9eqAE=",
+            "code_signing_config_arn": "",
+            "dead_letter_config": [],
+            "description": "",
+            "environment": [
+              {
+                "variables": {
+                  "S3_BUCKET_NAME": "nba-prediction-bucket-seng3011",
+                  "S3_FILE_PREFIX": "nba-stats-dev"
+                }
+              }
+            ],
+            "ephemeral_storage": [
+              {
+                "size": 512
+              }
+            ],
+            "file_system_config": [],
+            "filename": "lambda-deployment-package-collect-dev.zip",
+            "function_name": "nba-scraper-lambda-dev",
+            "handler": "data-collect.handler",
+            "id": "nba-scraper-lambda-dev",
+            "image_config": [],
+            "image_uri": "",
+            "invoke_arn": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda-dev/invocations",
+            "kms_key_arn": "",
+            "last_modified": "2025-04-04T04:15:59.000+0000",
+            "layers": [],
+            "logging_config": [
+              {
+                "application_log_level": "",
+                "log_format": "Text",
+                "log_group": "/aws/lambda/nba-scraper-lambda-dev",
+                "system_log_level": ""
+              }
+            ],
+            "memory_size": 128,
+            "package_type": "Zip",
+            "publish": false,
+            "qualified_arn": "arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda-dev:$LATEST",
+            "qualified_invoke_arn": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda-dev:$LATEST/invocations",
+            "replace_security_groups_on_destroy": null,
+            "replacement_security_group_ids": null,
+            "reserved_concurrent_executions": -1,
+            "role": "arn:aws:iam::851725446831:role/lambda_exec_role-dev",
+            "runtime": "nodejs18.x",
+            "s3_bucket": null,
+            "s3_key": null,
+            "s3_object_version": null,
+            "signing_job_arn": "",
+            "signing_profile_version_arn": "",
+            "skip_destroy": false,
+            "snap_start": [],
+            "source_code_hash": "Fn9tUAq5srPSMiLc6g5PRCBFVlHFCZ/vkMwUcB9eqAE=",
+            "source_code_size": 18872145,
+            "tags": {},
+            "tags_all": {},
+            "timeout": 29,
+            "timeouts": null,
+            "tracing_config": [
+              {
+                "mode": "PassThrough"
+              }
+            ],
+            "version": "$LATEST",
+            "vpc_config": []
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6NjAwMDAwMDAwMDAwLCJ1cGRhdGUiOjYwMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "aws_iam_role.lambda_exec_role",
+            "aws_s3_bucket.nba_prediction_bucket",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_permission",
+      "name": "allow_cloudwatch_to_invoke_scraper",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "action": "lambda:InvokeFunction",
+            "event_source_token": null,
+            "function_name": "nba-scraper-lambda-dev",
+            "function_url_auth_type": null,
+            "id": "AllowExecutionFromCloudWatch",
+            "principal": "events.amazonaws.com",
+            "principal_org_id": null,
+            "qualifier": "",
+            "source_account": null,
+            "source_arn": "arn:aws:events:us-east-1:851725446831:rule/daily-scraper-trigger-dev",
+            "statement_id": "AllowExecutionFromCloudWatch",
+            "statement_id_prefix": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_cloudwatch_event_rule.daily_scraper_trigger",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_permission",
+      "name": "apigw_analyse_lambda",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "action": "lambda:InvokeFunction",
+            "event_source_token": null,
+            "function_name": "nba-analyse-lambda-dev",
+            "function_url_auth_type": null,
+            "id": "AllowAPIGatewayInvokeAnalyse",
+            "principal": "apigateway.amazonaws.com",
+            "principal_org_id": null,
+            "qualifier": "",
+            "source_account": null,
+            "source_arn": "arn:aws:execute-api:us-east-1:851725446831:j25ls96ohb/*/*",
+            "statement_id": "AllowAPIGatewayInvokeAnalyse",
+            "statement_id_prefix": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_analyse_lambda",
+            "data.aws_iam_role.lambda_exec_role"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_permission",
+      "name": "apigw_retriever_lambda",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "action": "lambda:InvokeFunction",
+            "event_source_token": null,
+            "function_name": "nba-retriever-lambda-dev",
+            "function_url_auth_type": null,
+            "id": "AllowAPIGatewayInvokeRetriever",
+            "principal": "apigateway.amazonaws.com",
+            "principal_org_id": null,
+            "qualifier": "",
+            "source_account": null,
+            "source_arn": "arn:aws:execute-api:us-east-1:851725446831:j25ls96ohb/*/*",
+            "statement_id": "AllowAPIGatewayInvokeRetriever",
+            "statement_id_prefix": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_retriever_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lambda_permission",
+      "name": "apigw_scrape_lambda",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "action": "lambda:InvokeFunction",
+            "event_source_token": null,
+            "function_name": "nba-scraper-lambda-dev",
+            "function_url_auth_type": null,
+            "id": "AllowAPIGatewayInvokeScrape",
+            "principal": "apigateway.amazonaws.com",
+            "principal_org_id": null,
+            "qualifier": "",
+            "source_account": null,
+            "source_arn": "arn:aws:execute-api:us-east-1:851725446831:j25ls96ohb/*/*",
+            "statement_id": "AllowAPIGatewayInvokeScrape",
+            "statement_id_prefix": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_api_gateway_rest_api.nba_prediction_api",
+            "aws_lambda_function.nba_scraper_lambda",
+            "data.aws_iam_role.lambda_exec_role",
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "nba_prediction_bucket",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "acceleration_status": "",
+            "acl": null,
+            "arn": "arn:aws:s3:::nba-prediction-bucket-seng3011",
+            "bucket": "nba-prediction-bucket-seng3011",
+            "bucket_domain_name": "nba-prediction-bucket-seng3011.s3.amazonaws.com",
+            "bucket_prefix": "",
+            "bucket_regional_domain_name": "nba-prediction-bucket-seng3011.s3.us-east-1.amazonaws.com",
+            "cors_rule": [],
+            "force_destroy": null,
+            "grant": [
+              {
+                "id": "28006af0fcd7569f13984059c8d66ec5fff0df561bedeb040a1f9bd5bb8ebd01",
+                "permissions": [
+                  "FULL_CONTROL"
+                ],
+                "type": "CanonicalUser",
+                "uri": ""
+              }
+            ],
+            "hosted_zone_id": "Z3AQBSTGFYJSTF",
+            "id": "nba-prediction-bucket-seng3011",
+            "lifecycle_rule": [],
+            "logging": [],
+            "object_lock_configuration": [],
+            "object_lock_enabled": false,
+            "policy": "",
+            "region": "us-east-1",
+            "replication_configuration": [],
+            "request_payer": "BucketOwner",
+            "server_side_encryption_configuration": [
+              {
+                "rule": [
+                  {
+                    "apply_server_side_encryption_by_default": [
+                      {
+                        "kms_master_key_id": "",
+                        "sse_algorithm": "AES256"
+                      }
+                    ],
+                    "bucket_key_enabled": false
+                  }
+                ]
+              }
+            ],
+            "tags": {},
+            "tags_all": {},
+            "timeouts": null,
+            "versioning": [
+              {
+                "enabled": true,
+                "mfa_delete": false
+              }
+            ],
+            "website": [],
+            "website_domain": null,
+            "website_endpoint": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxMjAwMDAwMDAwMDAwLCJkZWxldGUiOjM2MDAwMDAwMDAwMDAsInJlYWQiOjEyMDAwMDAwMDAwMDAsInVwZGF0ZSI6MTIwMDAwMDAwMDAwMH0sInNjaGVtYV92ZXJzaW9uIjoiMCJ9"
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket_ownership_controls",
+      "name": "nba_prediction_bucket_ownership",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "bucket": "nba-prediction-bucket-seng3011",
+            "id": "nba-prediction-bucket-seng3011",
+            "rule": [
+              {
+                "object_ownership": "BucketOwnerEnforced"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket_public_access_block",
+      "name": "nba_prediction_bucket_public_access",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "block_public_acls": true,
+            "block_public_policy": true,
+            "bucket": "nba-prediction-bucket-seng3011",
+            "id": "nba-prediction-bucket-seng3011",
+            "ignore_public_acls": true,
+            "restrict_public_buckets": true
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "data.aws_s3_bucket.nba_prediction_bucket"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_sns_topic",
+      "name": "lambda_alerts",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "application_failure_feedback_role_arn": "",
+            "application_success_feedback_role_arn": "",
+            "application_success_feedback_sample_rate": 0,
+            "archive_policy": "",
+            "arn": "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev",
+            "beginning_archive_time": "",
+            "content_based_deduplication": false,
+            "delivery_policy": "",
+            "display_name": "",
+            "fifo_topic": false,
+            "firehose_failure_feedback_role_arn": "",
+            "firehose_success_feedback_role_arn": "",
+            "firehose_success_feedback_sample_rate": 0,
+            "http_failure_feedback_role_arn": "",
+            "http_success_feedback_role_arn": "",
+            "http_success_feedback_sample_rate": 0,
+            "id": "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev",
+            "kms_master_key_id": "",
+            "lambda_failure_feedback_role_arn": "",
+            "lambda_success_feedback_role_arn": "",
+            "lambda_success_feedback_sample_rate": 0,
+            "name": "nba-lambda-alerts-dev",
+            "name_prefix": "",
+            "owner": "851725446831",
+            "policy": "{\"Id\":\"__default_policy_ID\",\"Statement\":[{\"Action\":[\"SNS:GetTopicAttributes\",\"SNS:SetTopicAttributes\",\"SNS:AddPermission\",\"SNS:RemovePermission\",\"SNS:DeleteTopic\",\"SNS:Subscribe\",\"SNS:ListSubscriptionsByTopic\",\"SNS:Publish\"],\"Condition\":{\"StringEquals\":{\"AWS:SourceOwner\":\"851725446831\"}},\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Resource\":\"arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev\",\"Sid\":\"__default_statement_ID\"}],\"Version\":\"2008-10-17\"}",
+            "signature_version": 0,
+            "sqs_failure_feedback_role_arn": "",
+            "sqs_success_feedback_role_arn": "",
+            "sqs_success_feedback_sample_rate": 0,
+            "tags": {},
+            "tags_all": {},
+            "tracing_config": ""
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_sns_topic_subscription",
+      "name": "email_subscription",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev:b5156230-eee0-4855-976c-ec324e9cbcbf",
+            "confirmation_timeout_in_minutes": 1,
+            "confirmation_was_authenticated": false,
+            "delivery_policy": "",
+            "endpoint": "faileui@gmail.com",
+            "endpoint_auto_confirms": false,
+            "filter_policy": "",
+            "filter_policy_scope": "",
+            "id": "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev:b5156230-eee0-4855-976c-ec324e9cbcbf",
+            "owner_id": "851725446831",
+            "pending_confirmation": false,
+            "protocol": "email",
+            "raw_message_delivery": false,
+            "redrive_policy": "",
+            "replay_policy": "",
+            "subscription_role_arn": "",
+            "topic_arn": "arn:aws:sns:us-east-1:851725446831:nba-lambda-alerts-dev"
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "endpoint"
+              }
+            ]
+          ],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_sns_topic.lambda_alerts"
+          ]
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
