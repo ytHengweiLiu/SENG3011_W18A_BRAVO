@@ -34,8 +34,11 @@ jobs:
       - name: Run typechecking
         run: cd src/${{ matrix.service }} && npm run typecheck
 
-      - name: Run tests with coverage
-        run: cd src/${{ matrix.service }} && npm run test -- --json --outputFile=../../test-results.json --coverage
+      - name: Run tests with coverage and capture output
+        id: test_with_coverage
+        run: |
+          cd src/${{ matrix.service }}
+          npm run test -- --coverage | tee ../../test-output.txt
 
       # - name: Install dependencies
       #   run: cd src/tests/e2eTest && npm install
@@ -49,14 +52,22 @@ jobs:
       # - name: Run contract tests
       #   run: cd src/tests/contractTest && npm run test
 
-      # Extract coverage from test output
-      - name: Extract coverage from test output
+      # Extract coverage metrics from the test output
+      - name: Extract coverage
         id: extract_coverage
         run: |
-          cd src/${{ matrix.service }}
-          COVERAGE=$(grep -A 5 "Coverage summary" ../../test-results.json | grep "Statements" | sed -E 's/.*Statements\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
-          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-          echo "Coverage extracted: $COVERAGE%"
+          # Extract the coverage percentage from the test output
+          STATEMENTS=$(grep -A 5 "Coverage summary" test-output.txt | grep "Statements" | sed -E 's/.*Statements\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
+          BRANCHES=$(grep -A 5 "Coverage summary" test-output.txt | grep "Branches" | sed -E 's/.*Branches\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
+          FUNCTIONS=$(grep -A 5 "Coverage summary" test-output.txt | grep "Functions" | sed -E 's/.*Functions\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
+          LINES=$(grep -A 5 "Coverage summary" test-output.txt | grep "Lines" | sed -E 's/.*Lines\s*:\s*([0-9.]+)%.*/\1/g' || echo "0")
+
+          echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
+          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+          echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+          echo "lines=$LINES" >> $GITHUB_OUTPUT
+
+          echo "Coverage extracted: Statements: $STATEMENTS%, Branches: $BRANCHES%, Functions: $FUNCTIONS%, Lines: $LINES%"
 
       # Generate test report
       - name: Generate test report
@@ -73,7 +84,12 @@ jobs:
             node -e "const data = require('../../test-results.json'); console.log(\`- Total Tests: \${data.numTotalTests}\`)" >> ../../test-report-${{ matrix.service }}.md
             node -e "const data = require('../../test-results.json'); console.log(\`- Passed Tests: \${data.numPassedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
             node -e "const data = require('../../test-results.json'); console.log(\`- Failed Tests: \${data.numFailedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            echo "- Test Coverage: ${{ steps.extract_coverage.outputs.coverage }}%" >> ../../test-report-${{ matrix.service }}.md
+
+            echo "### Test Coverage" >> ../../test-report-${{ matrix.service }}.md
+            echo "- Statements: ${{ steps.extract_coverage.outputs.statements }}%" >> ../../test-report-${{ matrix.service }}.md
+            echo "- Branches: ${{ steps.extract_coverage.outputs.branches }}%" >> ../../test-report-${{ matrix.service }}.md
+            echo "- Functions: ${{ steps.extract_coverage.outputs.functions }}%" >> ../../test-report-${{ matrix.service }}.md
+            echo "- Lines: ${{ steps.extract_coverage.outputs.lines }}%" >> ../../test-report-${{ matrix.service }}.md
 
             echo "" >> ../../test-report-${{ matrix.service }}.md
             echo "### Failed Tests" >> ../../test-report-${{ matrix.service }}.md
