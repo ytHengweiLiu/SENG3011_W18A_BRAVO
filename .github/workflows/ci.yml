@@ -1,9 +1,9 @@
-name: Test
+name: Continuous Integration
 
 on:
   push:
     branches:
-      - "*"
+      - "**"
   pull_request:
     branches:
       - main
@@ -34,7 +34,18 @@ jobs:
         run: cd src/${{ matrix.service }} && npm run typecheck
 
       - name: Run tests with coverage
-        run: cd src/${{ matrix.service }} && npm run test -- --json --outputFile=../../test-results.json
+        run: cd src/${{ matrix.service }} && npm run test npm run test -- --coverage --coverageReporters='json-summary'
+
+      # Check test coverage
+      - name: Check test coverage
+        run: |
+          cd src/${{ matrix.service }}
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Test coverage is $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "::warning::Test coverage for ${{ matrix.service }} is below 80% (currently $COVERAGE%)"
+          fi
+        shell: bash
 
       # - name: Install dependencies
       #   run: cd src/tests/e2eTest && npm install
@@ -49,45 +60,80 @@ jobs:
       #   run: cd src/tests/contractTest && npm run test
 
       # Generate test report
-      - name: Generate test report
+      - name: Publish Test Report
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: "./src/${{ matrix.service }}/ctrf/*.json"
+          summary-report: true
+        if: always()
+
+      # Install tools for PDF generation
+      - name: Install PDF generation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf
+          npm install -g json-to-html
+
+      # Format coverage report to PDF
+      - name: Generate coverage PDF report
         run: |
           cd src/${{ matrix.service }}
-          echo "# Test Report for ${{ matrix.service }}" > ../../test-report-${{ matrix.service }}.md
-          echo "Date: $(date)" >> ../../test-report-${{ matrix.service }}.md
-          echo "Service: ${{ matrix.service }}" >> ../../test-report-${{ matrix.service }}.md
-          echo "" >> ../../test-report-${{ matrix.service }}.md
-          echo "## Test Results" >> ../../test-report-${{ matrix.service }}.md
+          # Create a simple HTML file with the coverage data
+          echo "<html><head><title>Coverage Report for ${{ matrix.service }}</title></head><body>" > coverage-report.html
+          echo "<h1>Coverage Report for ${{ matrix.service }}</h1>" >> coverage-report.html
+          echo "<pre>" >> coverage-report.html
+          cat coverage/coverage-summary.json | jq -r . >> coverage-report.html
+          echo "</pre>" >> coverage-report.html
 
-          if [ -f "../../test-results.json" ]; then
-            echo "### Summary" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Total Tests: \${data.numTotalTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Passed Tests: \${data.numPassedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Failed Tests: \${data.numFailedTests}\`)" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); console.log(\`- Test Coverage: \${data.coverageMap?.total?.statements?.pct || 'N/A'}%\`)" >> ../../test-report-${{ matrix.service }}.md
+          # Add formatted table if needed
+          echo "<h2>Coverage Summary</h2>" >> coverage-report.html
+          echo "<table border='1'>" >> coverage-report.html
+          echo "<tr><th>Category</th><th>Lines %</th><th>Statements %</th><th>Functions %</th><th>Branches %</th></tr>" >> coverage-report.html
+          LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
+          FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
+          BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
+          echo "<tr><td>Total</td><td>$LINES</td><td>$STATEMENTS</td><td>$FUNCTIONS</td><td>$BRANCHES</td></tr>" >> coverage-report.html
+          echo "</table>" >> coverage-report.html
+          echo "</body></html>" >> coverage-report.html
 
-            echo "" >> ../../test-report-${{ matrix.service }}.md
-            echo "### Failed Tests" >> ../../test-report-${{ matrix.service }}.md
-            node -e "const data = require('../../test-results.json'); const failures = data.testResults?.filter(t => t.status === 'failed') || []; failures.forEach(f => { console.log(\`- \${f.name}: \${f.message || 'Failed'}\`); });" >> ../../test-report-${{ matrix.service }}.md
+          # Convert HTML to PDF
+          wkhtmltopdf coverage-report.html coverage-report.pdf
+
+      # Format test results to PDF (if CTRF files exist)
+      - name: Generate test results PDF report
+        run: |
+          cd src/${{ matrix.service }}
+          if ls ctrf/*.json 1> /dev/null 2>&1; then
+            # Create a simple HTML file with the test results
+            echo "<html><head><title>Test Results for ${{ matrix.service }}</title></head><body>" > test-report.html
+            echo "<h1>Test Results for ${{ matrix.service }}</h1>" >> test-report.html
+            
+            for file in ctrf/*.json; do
+              echo "<h2>Test Suite: $(basename "$file")</h2>" >> test-report.html
+              echo "<pre>" >> test-report.html
+              cat "$file" | jq -r . >> test-report.html
+              echo "</pre>" >> test-report.html
+            done
+            
+            echo "</body></html>" >> test-report.html
+            
+            # Convert HTML to PDF
+            wkhtmltopdf test-report.html test-report.pdf
           else
-            echo "No test results found" >> ../../test-report-${{ matrix.service }}.md
+            echo "No CTRF test result files found."
           fi
 
-      # Convert MD to PDF
-      - name: Install md-to-pdf
-        run: npm install -g md-to-pdf
-      - name: Convert report to PDF
-        run: md-to-pdf test-report-${{ matrix.service }}.md
-
-      # Upload test report as artifact
-      - name: Upload test report
+      # Upload both raw coverage reports and PDF reports as artifacts
+      - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: test-report-${{ matrix.service }}
+          name: coverage-report-${{ matrix.service }}
           path: |
-            test-report-${{ matrix.service }}.md
-            test-report-${{ matrix.service }}.pdf
-          retention-days: 30
-        if: always()
+            src/${{ matrix.service }}/coverage
+            src/${{ matrix.service }}/coverage-report.pdf
+            src/${{ matrix.service }}/test-report.pdf
+          retention-days: 10
 
       # Package Lambda function
       - name: Package Lambda function
