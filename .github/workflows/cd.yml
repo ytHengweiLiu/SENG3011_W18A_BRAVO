@@ -81,6 +81,9 @@ jobs:
           terraform import -input=false aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "Resource may not exist yet"
           terraform import -input=false aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "Resource may not exist yet"
           terraform import -input=false aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "Resource may not exist yet"
+          terraform import -input=false aws_lambda_permission.apigw_analyse_lambda AllowAPIGatewayInvokeAnalyse || echo "Resource may not exist yet" 
+          terraform import -input=false aws_lambda_permission.apigw_retriever_lambda AllowAPIGatewayInvokeRetriever || echo "Resource may not exist yet"
+          terraform import -input=false aws_lambda_permission.allow_cloudwatch_to_invoke_scraper AllowExecutionFromCloudWatch || echo "Resource may not exist yet"
 
       - name: Terraform Plan
         id: plan

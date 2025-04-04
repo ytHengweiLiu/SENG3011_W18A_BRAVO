@@ -133,6 +133,9 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
 resource "aws_api_gateway_rest_api" "nba_prediction_api" {
   name        = "nba-prediction-api${local.name_suffix}" # name in API Gateway
   description = "API Gateway for NBA Prediction Lambda"
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
 }
 
 # API Gateway Resource for Scrape
@@ -573,22 +576,36 @@ resource "aws_cloudwatch_metric_alarm" "api_5xx_error_alarm" {
 # SNS Topic for Alerts
 resource "aws_sns_topic" "lambda_alerts" {
   name = "nba-lambda-alerts${local.name_suffix}"
+  fifo_topic         = false
+  content_based_deduplication = false
 }
 
 # CloudWatch Log Groups with Retention Policy
 resource "aws_cloudwatch_log_group" "scraper_logs" {
   name              = "/aws/lambda/${aws_lambda_function.nba_scraper_lambda.function_name}"
   retention_in_days = 14
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags, kms_key_id]
+  }
 }
 
 resource "aws_cloudwatch_log_group" "retriever_logs" {
   name              = "/aws/lambda/${aws_lambda_function.nba_retriever_lambda.function_name}"
   retention_in_days = 14
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags, kms_key_id]
+  }
 }
 
 resource "aws_cloudwatch_log_group" "analyser_logs" {
   name              = "/aws/lambda/${aws_lambda_function.nba_analyse_lambda.function_name}"
   retention_in_days = 14
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags, kms_key_id]
+  }
 }
 
 # CloudWatch Logs Insights saved query
@@ -614,6 +631,7 @@ resource "aws_cloudwatch_event_rule" "daily_scraper_trigger" {
   name                = "daily-scraper-trigger${local.name_suffix}"
   description         = "Trigger the NBA scraper Lambda function daily (${local.environment})"
   schedule_expression = local.env_config.schedule
+  event_bus_name      = "default"
 }
 
 # CloudWatch Event Target to invoke the scraper Lambda function
