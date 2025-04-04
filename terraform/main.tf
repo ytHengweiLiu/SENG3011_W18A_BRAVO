@@ -27,6 +27,7 @@ provider "aws" {
 
 # Check if the S3 Bucket exists
 data "aws_s3_bucket" "nba_prediction_bucket" {
+  count  = length(data.aws_s3_bucket.nba_prediction_bucket.id) == 0 ? 1 : 0
   bucket = "nba-prediction-bucket-seng3011"
 }
 
@@ -56,6 +57,7 @@ resource "aws_s3_bucket_public_access_block" "nba_prediction_bucket_public_acces
 
 # IAM Role: Check if the IAM role exists
 data "aws_iam_role" "lambda_exec_role" {
+  count  = length(data.aws_iam_role.lambda_exec_role.id) == 0 ? 1 : 0
   name = "lambda_exec_role"
 }
 
@@ -84,6 +86,7 @@ data "aws_iam_policy" "lambda_s3_access_policy" {
 
 # IAM Policy for Lambda to access S3
 resource "aws_iam_policy" "lambda_s3_access_policy" {
+  count = length(data.aws_iam_policy.lambda_s3_access_policy.id) == 0 ? 1 : 0
   name        = "LambdaS3AccessPolicy${local.name_suffix}"
   description = "Allow Lambda to access S3 bucket"
   policy = jsonencode({
