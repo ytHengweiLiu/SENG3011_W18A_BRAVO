@@ -74,6 +74,16 @@ jobs:
             -var="s3_bucket_name=$BUCKET_NAME" \
             -var="alert_email=$ALERT_EMAIL" \
             aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "nba_analyse_lambda already imported"
+
+          terraform import aws_lambda_permission.apigw_scrape_lambda nba-scraper-lambda/AllowAPIGatewayInvokeScrape || echo "permission already imported"
+          terraform import aws_lambda_permission.apigw_retriever_lambda nba-retriever-lambda/AllowAPIGatewayInvokeRetriever || echo "permission already imported"
+          terraform import aws_lambda_permission.apigw_analyse_lambda nba-analyse-lambda/AllowAPIGatewayInvokeAnalyse || echo "permission already imported"
+          terraform import aws_lambda_permission.allow_cloudwatch_to_invoke_scraper nba-scraper-lambda/AllowExecutionFromCloudWatch || echo "cloudwatch permission already imported"
+
+          terraform import aws_cloudwatch_log_group.scraper_logs /aws/lambda/nba-scraper-lambda || echo "log group already imported"
+          terraform import aws_cloudwatch_log_group.retriever_logs /aws/lambda/nba-retriever-lambda || echo "log group already imported"
+          terraform import aws_cloudwatch_log_group.analyser_logs /aws/lambda/nba-analyse-lambda || echo "log group already imported"
+
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
