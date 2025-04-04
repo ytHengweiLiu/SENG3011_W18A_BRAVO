@@ -34,7 +34,18 @@ jobs:
         run: cd src/${{ matrix.service }} && npm run typecheck
 
       - name: Run tests with coverage
-        run: cd src/${{ matrix.service }} && npm run test -- --json --outputFile=../../test-results.json
+        run: cd src/${{ matrix.service }} && npm run test -- --coverage --json --outputFile=../../test-results.json
+
+      # Check test coverage
+      - name: Check test coverage
+        run: |
+          cd src/${{ matrix.service }}
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Test coverage is $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "::warning::Test coverage for ${{ matrix.service }} is below 80% (currently $COVERAGE%)"
+          fi
+        shell: bash
 
       # - name: Install dependencies
       #   run: cd src/tests/e2eTest && npm install
@@ -49,7 +60,6 @@ jobs:
       #   run: cd src/tests/contractTest && npm run test
 
       # Generate test report
-      # Generate test report
       - name: Publish Test Report
         uses: ctrf-io/github-test-reporter@v1
         with:
@@ -58,6 +68,74 @@ jobs:
           upload-artifact: true
           artifact-name: test-report-${{ matrix.service }}
         if: always()
+
+      # Install tools for PDF generation
+      - name: Install PDF generation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf
+          npm install -g json-to-html
+
+      # Format coverage report to PDF
+      - name: Generate coverage PDF report
+        run: |
+          cd src/${{ matrix.service }}
+          # Create a simple HTML file with the coverage data
+          echo "<html><head><title>Coverage Report for ${{ matrix.service }}</title></head><body>" > coverage-report.html
+          echo "<h1>Coverage Report for ${{ matrix.service }}</h1>" >> coverage-report.html
+          echo "<pre>" >> coverage-report.html
+          cat coverage/coverage-summary.json | jq -r . >> coverage-report.html
+          echo "</pre>" >> coverage-report.html
+
+          # Add formatted table if needed
+          echo "<h2>Coverage Summary</h2>" >> coverage-report.html
+          echo "<table border='1'>" >> coverage-report.html
+          echo "<tr><th>Category</th><th>Lines %</th><th>Statements %</th><th>Functions %</th><th>Branches %</th></tr>" >> coverage-report.html
+          LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
+          FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
+          BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
+          echo "<tr><td>Total</td><td>$LINES</td><td>$STATEMENTS</td><td>$FUNCTIONS</td><td>$BRANCHES</td></tr>" >> coverage-report.html
+          echo "</table>" >> coverage-report.html
+          echo "</body></html>" >> coverage-report.html
+
+          # Convert HTML to PDF
+          wkhtmltopdf coverage-report.html coverage-report.pdf
+
+      # Format test results to PDF (if CTRF files exist)
+      - name: Generate test results PDF report
+        run: |
+          cd src/${{ matrix.service }}
+          if ls ctrf/*.json 1> /dev/null 2>&1; then
+            # Create a simple HTML file with the test results
+            echo "<html><head><title>Test Results for ${{ matrix.service }}</title></head><body>" > test-report.html
+            echo "<h1>Test Results for ${{ matrix.service }}</h1>" >> test-report.html
+            
+            for file in ctrf/*.json; do
+              echo "<h2>Test Suite: $(basename "$file")</h2>" >> test-report.html
+              echo "<pre>" >> test-report.html
+              cat "$file" | jq -r . >> test-report.html
+              echo "</pre>" >> test-report.html
+            done
+            
+            echo "</body></html>" >> test-report.html
+            
+            # Convert HTML to PDF
+            wkhtmltopdf test-report.html test-report.pdf
+          else
+            echo "No CTRF test result files found."
+          fi
+
+      # Upload both raw coverage reports and PDF reports as artifacts
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.service }}
+          path: |
+            src/${{ matrix.service }}/coverage
+            src/${{ matrix.service }}/coverage-report.pdf
+            src/${{ matrix.service }}/test-report.pdf
+          retention-days: 10
 
       # Package Lambda function
       - name: Package Lambda function
