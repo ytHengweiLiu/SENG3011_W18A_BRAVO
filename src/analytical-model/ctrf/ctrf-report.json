@@ -1,0 +1,173 @@
+{
+  "results": {
+    "tool": {
+      "name": "jest"
+    },
+    "summary": {
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "pending": 0,
+      "skipped": 0,
+      "other": 0,
+      "start": 1743779744699,
+      "stop": 1743779744882
+    },
+    "tests": [
+      {
+        "name": "Team Analysis Lambda Tests should successfully analyse two teams and return win probabilities",
+        "duration": 26,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should return 400 when team parameters are missing",
+        "duration": 2,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should return 404 when a team is not found in the data",
+        "duration": 3,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should handle API request failures",
+        "duration": 14,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should handle API returning non-200 status",
+        "duration": 4,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should handle API returning invalid JSON",
+        "duration": 4,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should handle teams provided in the event body (JSON string)",
+        "duration": 4,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should handle teams provided in the event body (parsed JSON object)",
+        "duration": 4,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Lambda Tests should handle teams provided directly in the event object",
+        "duration": 3,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Lambda Tests"
+      },
+      {
+        "name": "Team Analysis Helper Functions Tests findTeamData should find a team by name (case insensitive)",
+        "duration": 0,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Helper Functions Tests"
+      },
+      {
+        "name": "Team Analysis Helper Functions Tests extractTeamStats should convert string values to numbers",
+        "duration": 1,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Helper Functions Tests"
+      },
+      {
+        "name": "Team Analysis Helper Functions Tests compareTeamStats should calculate differences between team stats",
+        "duration": 2,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Helper Functions Tests"
+      },
+      {
+        "name": "Team Analysis Helper Functions Tests calculateWinProbability should calculate win probabilities based on favorable stats",
+        "duration": 1,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Helper Functions Tests"
+      },
+      {
+        "name": "Team Analysis Helper Functions Tests fetchFromDataRetrievalApi should handle API responses correctly",
+        "duration": 2,
+        "status": "passed",
+        "rawStatus": "passed",
+        "type": "unit",
+        "filePath": "/Users/fai/Desktop/SENG3011_W18A_BRAVO/src/analytical-model/__tests__/team-analyse.test.js",
+        "retries": 0,
+        "flaky": false,
+        "suite": "team-analyse.test.js > Team Analysis Helper Functions Tests"
+      }
+    ]
+  }
+}

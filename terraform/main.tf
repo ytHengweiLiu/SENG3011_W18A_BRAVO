@@ -30,12 +30,6 @@ data "aws_s3_bucket" "nba_prediction_bucket" {
   bucket = "nba-prediction-bucket-seng3011"
 }
 
-# # S3 Bucket
-# resource "aws_s3_bucket" "nba_prediction_bucket" {
-#   count  = length(data.aws_s3_bucket.nba_prediction_bucket.id) == 0 ? 1 : 0
-#   bucket = "nba-prediction-bucket-seng3011"
-# }
-
 # Disable ACLs and enforce bucket owner enforced
 resource "aws_s3_bucket_ownership_controls" "nba_prediction_bucket_ownership" {
   bucket = data.aws_s3_bucket.nba_prediction_bucket.id
@@ -60,51 +54,10 @@ data "aws_iam_role" "lambda_exec_role" {
   name = "lambda_exec_role"
 }
 
-# # IAM Role for Lambda
-# resource "aws_iam_role" "lambda_exec_role" {
-#   count  = length(data.aws_iam_role.lambda_exec_role.id) == 0 ? 1 : 0
-#   name = "lambda_exec_role${local.name_suffix}"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Action = "sts:AssumeRole"
-#         Effect = "Allow"
-#         Principal = {
-#           Service = "lambda.amazonaws.com"
-#         }
-#       }
-#     ]
-#   })
-# }
-
 # IAM Policy: Check if the IAM policy exists
 data "aws_iam_policy" "lambda_s3_access_policy" {
   name = "LambdaS3AccessPolicy"
 }
-
-# # IAM Policy for Lambda to access S3
-# resource "aws_iam_policy" "lambda_s3_access_policy" {
-#   count = length(data.aws_iam_policy.lambda_s3_access_policy.id) == 0 ? 1 : 0
-#   name        = "LambdaS3AccessPolicy${local.name_suffix}"
-#   description = "Allow Lambda to access S3 bucket"
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect   = "Allow"
-#         Action   = ["s3:ListBucket"]
-#         Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011"]
-#       },
-#       {
-#         Effect   = "Allow"
-#         Action   = ["s3:GetObject", "s3:PutObject"]
-#         Resource = ["arn:aws:s3:::nba-prediction-bucket-seng3011/*"]
-#       }
-#     ]
-#   })
-# }
 
 # Attach the S3 access policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "lambda_s3_access" {
@@ -180,6 +133,9 @@ resource "aws_lambda_function" "nba_analyse_lambda" {
 resource "aws_api_gateway_rest_api" "nba_prediction_api" {
   name        = "nba-prediction-api${local.name_suffix}" # name in API Gateway
   description = "API Gateway for NBA Prediction Lambda"
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
 }
 
 # API Gateway Resource for Scrape
@@ -620,29 +576,36 @@ resource "aws_cloudwatch_metric_alarm" "api_5xx_error_alarm" {
 # SNS Topic for Alerts
 resource "aws_sns_topic" "lambda_alerts" {
   name = "nba-lambda-alerts${local.name_suffix}"
-}
-
-# Email subscription
-resource "aws_sns_topic_subscription" "email_subscription" {
-  topic_arn = aws_sns_topic.lambda_alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
+  fifo_topic         = false
+  content_based_deduplication = false
 }
 
 # CloudWatch Log Groups with Retention Policy
 resource "aws_cloudwatch_log_group" "scraper_logs" {
   name              = "/aws/lambda/${aws_lambda_function.nba_scraper_lambda.function_name}"
   retention_in_days = 14
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags, kms_key_id]
+  }
 }
 
 resource "aws_cloudwatch_log_group" "retriever_logs" {
   name              = "/aws/lambda/${aws_lambda_function.nba_retriever_lambda.function_name}"
   retention_in_days = 14
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags, kms_key_id]
+  }
 }
 
 resource "aws_cloudwatch_log_group" "analyser_logs" {
   name              = "/aws/lambda/${aws_lambda_function.nba_analyse_lambda.function_name}"
   retention_in_days = 14
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags, kms_key_id]
+  }
 }
 
 # CloudWatch Logs Insights saved query
@@ -668,6 +631,7 @@ resource "aws_cloudwatch_event_rule" "daily_scraper_trigger" {
   name                = "daily-scraper-trigger${local.name_suffix}"
   description         = "Trigger the NBA scraper Lambda function daily (${local.environment})"
   schedule_expression = local.env_config.schedule
+  event_bus_name      = "default"
 }
 
 # CloudWatch Event Target to invoke the scraper Lambda function
