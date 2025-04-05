@@ -20,8 +20,8 @@ jobs:
 
       - name: Zip Analytic Model Lambda
         run: |
-          cd src/analytic-model
-          zip -r ../../analytic-model.zip .
+          cd src/analytical-model
+          zip -r ../../analytical-model.zip .
           cd ../..
 
       - name: Zip Data Collect Lambda
@@ -42,7 +42,7 @@ jobs:
           args: |
             lambda update-function-code \
               --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda \
-              --zip-file fileb://analytic-model.zip && \
+              --zip-file fileb://analytical-model.zip && \
             lambda update-function-code \
               --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda \
               --zip-file fileb://data-collect.zip && \
