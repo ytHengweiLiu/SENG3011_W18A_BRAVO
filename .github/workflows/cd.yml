@@ -24,11 +24,33 @@ jobs:
           zip -r ../../analytical-model.zip .
           cd ../..
 
+      - name: Deploy Analytic Model Lambda
+        uses: imehedi/actions-awscli-v2@latest
+        with:
+          args: "lambda update-function-code \
+            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda \
+            --zip-file fileb://analytical-model.zip"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+
       - name: Zip Data Collect Lambda
         run: |
           cd src/data-collect
           zip -r ../../data-collect.zip .
           cd ../..
+
+      - name: Deploy Data Collect Lambda
+        uses: imehedi/actions-awscli-v2@latest
+        with:
+          args: "lambda update-function-code \
+            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda \
+            --zip-file fileb://data-collect.zip"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
 
       - name: Zip Data Retrieve Lambda
         run: |
@@ -36,19 +58,12 @@ jobs:
           zip -r ../../data-retrieve.zip .
           cd ../..
 
-      - name: Deploy to AWS Lambda
+      - name: Deploy Data Retrieve Lambda
         uses: imehedi/actions-awscli-v2@latest
         with:
-          args: |
-            lambda update-function-code \
-              --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda \
-              --zip-file fileb://analytical-model.zip && \
-            lambda update-function-code \
-              --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda \
-              --zip-file fileb://data-collect.zip && \
-            lambda update-function-code \
-              --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda \
-              --zip-file fileb://data-retrieve.zip
+          args: "lambda update-function-code \
+            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda \
+            --zip-file fileb://data-retrieve.zip"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
