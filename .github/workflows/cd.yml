@@ -2,108 +2,56 @@ name: Continuous Deployment
 
 on:
   workflow_run:
-    workflows: ["Continuous Integration"]
+    workflows: ["Test"]
     branches: [main]
     types:
       - completed
-  workflow_dispatch:
-
-env:
-  TF_LOG: INFO
-  AWS_REGION: us-east-1
-  TF_IN_AUTOMATION: "true"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18"
+      - name: Install zip tool
+        uses: montudor/action-zip@v1
 
-      - name: Package Data Collection Lambda function
+      - name: Zip Analytic Model Code
+        run: |
+          cd src/analytic-model
+          zip -r ../../analytic-model.zip .
+          cd ../..
+        shell: bash
+
+      - name: Zip Data Collect Code
         run: |
           cd src/data-collect
-          npm install
-          zip -r ../../terraform/lambda-deployment-package-collect.zip .
+          zip -r ../../data-collect.zip .
+          cd ../..
+        shell: bash
 
-      - name: Package Data Retrieval Lambda function
+      - name: Zip Data Retrieve Code
         run: |
           cd src/data-retrieve
-          npm install
-          zip -r ../../terraform/lambda-deployment-package-retrieve.zip .
+          zip -r ../../data-retrieve.zip .
+          cd ../..
+        shell: bash
 
-      - name: Package Analytical Model Lambda function
-        run: |
-          cd src/analytical-model
-          npm install
-          zip -r ../../terraform/lambda-deployment-package-analyse.zip .
-
-      - name: Display packaged Lambda functions
-        run: ls -la terraform/
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to AWS Lambda
+        uses: imehedi/actions-awscli-v2@latest
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7
-
-      - name: Create Terraform variables file
-        run: |
-          cd terraform
-          cat > terraform.tfvars <<EOF
-          s3_bucket_name = "${{ secrets.S3_BUCKET_NAME }}"
-          aws_access_key_id = "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          aws_secret_access_key = "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-          aws_region = "${{ env.AWS_REGION }}"
-          EOF
-
-      - name: Terraform Init
-        run: |
-          cd terraform
-          terraform init -input=false
-
-      - name: Import existing resources (if any)
-        continue-on-error: true
-        run: |
-          cd terraform
-          terraform import -input=false aws_lambda_function.nba_scraper_lambda nba-scraper-lambda || echo "Resource may not exist yet"
-          terraform import -input=false aws_lambda_function.nba_retriever_lambda nba-retriever-lambda || echo "Resource may not exist yet"
-          terraform import -input=false aws_lambda_function.nba_analyse_lambda nba-analyse-lambda || echo "Resource may not exist yet"
-          terraform import -input=false aws_lambda_permission.apigw_analyse_lambda nba-analyse-lambda/AllowAPIGatewayInvokeAnalyse || echo "Resource may not exist yet" 
-          terraform import -input=false aws_lambda_permission.apigw_retriever_lambda nba-retriever-lambda/AllowAPIGatewayInvokeRetriever || echo "Resource may not exist yet"
-          terraform import -input=false aws_lambda_permission.allow_cloudwatch_to_invoke_scraper nba-scraper-lambda/AllowExecutionFromCloudWatch || echo "Resource may not exist yet"
-      - name: Terraform Plan
-        id: plan
-        run: |
-          cd terraform
-          terraform plan -input=false -out=tfplan
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: |
-          cd terraform
-          terraform apply -input=false -auto-approve tfplan
-
-      - name: Get API Gateway URL
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: |
-          cd terraform
-          echo "API URL: $(terraform output -raw api_url)"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          cd terraform
-          rm -f lambda-deployment-package-*.zip tfplan terraform.tfvars
+          args: |
+            lambda update-function-code \
+              --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda \
+              --zip-file fileb://analytic-model.zip && \
+            lambda update-function-code \
+              --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda \
+              --zip-file fileb://data-collect.zip && \
+            lambda update-function-code \
+              --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda \
+              --zip-file fileb://data-retrieve.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
