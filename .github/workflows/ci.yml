@@ -101,7 +101,6 @@ jobs:
           # Convert HTML to PDF
           wkhtmltopdf coverage-report.html coverage-report.pdf
 
-      # Format test results to PDF (if CTRF files exist)
       - name: Generate test results PDF report
         run: |
           cd src/${{ matrix.service }}
@@ -112,6 +111,25 @@ jobs:
             
             for file in ctrf/*.json; do
               echo "<h2>Test Suite: $(basename "$file")</h2>" >> test-report.html
+              
+              # Add summary section at the top
+              echo "<div style='background-color: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px;'>" >> test-report.html
+              echo "<h3>Quick Summary</h3>" >> test-report.html
+              echo "<table border='1' cellpadding='5' style='border-collapse: collapse;'>" >> test-report.html
+              echo "<tr><th>Total Tests</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Duration</th></tr>" >> test-report.html
+              
+              TESTS=$(cat "$file" | jq -r '.results.summary.tests')
+              PASSED=$(cat "$file" | jq -r '.results.summary.passed')
+              FAILED=$(cat "$file" | jq -r '.results.summary.failed')
+              SKIPPED=$(cat "$file" | jq -r '.results.summary.skipped')
+              START=$(cat "$file" | jq -r '.results.summary.start')
+              STOP=$(cat "$file" | jq -r '.results.summary.stop')
+              DURATION=$((($STOP - $START) / 1000))
+              
+              echo "<tr><td>$TESTS</td><td>$PASSED</td><td>$FAILED</td><td>$SKIPPED</td><td>${DURATION}s</td></tr>" >> test-report.html
+              echo "</table>" >> test-report.html
+              echo "</div>" >> test-report.html
+              
               echo "<pre>" >> test-report.html
               cat "$file" | jq -r . >> test-report.html
               echo "</pre>" >> test-report.html
@@ -129,9 +147,8 @@ jobs:
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-${{ matrix.service }}
+          name: testing-report-${{ matrix.service }}
           path: |
-            src/${{ matrix.service }}/coverage
             src/${{ matrix.service }}/coverage-report.pdf
             src/${{ matrix.service }}/test-report.pdf
           retention-days: 10
