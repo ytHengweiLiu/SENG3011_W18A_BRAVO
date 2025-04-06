@@ -65,6 +65,7 @@ jobs:
         with:
           report-path: "./src/${{ matrix.service }}/ctrf/*.json"
           summary-report: true
+          failed-report: true
         if: always()
 
       # Install tools for PDF generation
