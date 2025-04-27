@@ -12,160 +12,182 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [data-collect, data-retrieve, analytical-model]
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20.12.1
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-      - name: Install dependencies
-        run: cd src/${{ matrix.service }} && npm install
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
 
-      - name: Run linting
-        run: cd src/${{ matrix.service }} && npm run lint
+    - name: Run tests
+      run: |
+        pytest analytical-model/analytical-model-v2/test_analytical_model.py
+        pytest data-collect/data-collect-v2/test_data_collect.py
+        pytest data-retrieve/data-retrieve-v2/test_data_retrieve.py
+  # test:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       service: [data-collect, data-retrieve, analytical-model]
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
 
-      - name: Run typechecking
-        run: cd src/${{ matrix.service }} && npm run typecheck
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 20.12.1
 
-      - name: Run tests with coverage
-        run: cd src/${{ matrix.service }} && npm run test npm run test -- --coverage --coverageReporters='json-summary'
+  #     - name: Install dependencies
+  #       run: cd src/${{ matrix.service }} && npm install
 
-      # Check test coverage
-      - name: Check test coverage
-        run: |
-          cd src/${{ matrix.service }}
-          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
-          echo "Test coverage is $COVERAGE%"
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "::warning::Test coverage for ${{ matrix.service }} is below 80% (currently $COVERAGE%)"
-          fi
-        shell: bash
+  #     - name: Run linting
+  #       run: cd src/${{ matrix.service }} && npm run lint
 
-      # - name: Install dependencies
-      #   run: cd src/tests/e2eTest && npm install
+  #     - name: Run typechecking
+  #       run: cd src/${{ matrix.service }} && npm run typecheck
 
-      # - name: Run e2e tests
-      #   run: cd src/tests/e2eTest && npm run test
+  #     - name: Run tests with coverage
+  #       run: cd src/${{ matrix.service }} && npm run test npm run test -- --coverage --coverageReporters='json-summary'
 
-      # - name: Install dependencies
-      #   run: cd src/tests/contractTest && npm install
+  #     # Check test coverage
+  #     - name: Check test coverage
+  #       run: |
+  #         cd src/${{ matrix.service }}
+  #         COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+  #         echo "Test coverage is $COVERAGE%"
+  #         if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+  #           echo "::warning::Test coverage for ${{ matrix.service }} is below 80% (currently $COVERAGE%)"
+  #         fi
+  #       shell: bash
 
-      # - name: Run contract tests
-      #   run: cd src/tests/contractTest && npm run test
+  #     # - name: Install dependencies
+  #     #   run: cd src/tests/e2eTest && npm install
 
-      # Generate test report
-      - name: Publish Test Report
-        uses: ctrf-io/github-test-reporter@v1
-        with:
-          report-path: "./src/${{ matrix.service }}/ctrf/*.json"
-          summary-report: true
-          failed-report: true
-        if: always()
+  #     # - name: Run e2e tests
+  #     #   run: cd src/tests/e2eTest && npm run test
 
-      # Install tools for PDF generation
-      - name: Install PDF generation tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wkhtmltopdf
-          npm install -g json-to-html
+  #     # - name: Install dependencies
+  #     #   run: cd src/tests/contractTest && npm install
 
-      # Format coverage report to PDF
-      - name: Generate coverage PDF report
-        run: |
-          cd src/${{ matrix.service }}
-          # Create a simple HTML file with the coverage data
-          echo "<html><head><title>Coverage Report for ${{ matrix.service }}</title></head><body>" > coverage-report.html
-          echo "<h1>Coverage Report for ${{ matrix.service }}</h1>" >> coverage-report.html
-          echo "<pre>" >> coverage-report.html
-          cat coverage/coverage-summary.json | jq -r . >> coverage-report.html
-          echo "</pre>" >> coverage-report.html
+  #     # - name: Run contract tests
+  #     #   run: cd src/tests/contractTest && npm run test
 
-          # Add formatted table if needed
-          echo "<h2>Coverage Summary</h2>" >> coverage-report.html
-          echo "<table border='1'>" >> coverage-report.html
-          echo "<tr><th>Category</th><th>Lines %</th><th>Statements %</th><th>Functions %</th><th>Branches %</th></tr>" >> coverage-report.html
-          LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
-          STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
-          FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
-          BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
-          echo "<tr><td>Total</td><td>$LINES</td><td>$STATEMENTS</td><td>$FUNCTIONS</td><td>$BRANCHES</td></tr>" >> coverage-report.html
-          echo "</table>" >> coverage-report.html
-          echo "</body></html>" >> coverage-report.html
+  #     # Generate test report
+  #     - name: Publish Test Report
+  #       uses: ctrf-io/github-test-reporter@v1
+  #       with:
+  #         report-path: "./src/${{ matrix.service }}/ctrf/*.json"
+  #         summary-report: true
+  #         failed-report: true
+  #       if: always()
 
-          # Convert HTML to PDF
-          wkhtmltopdf coverage-report.html coverage-report.pdf
+  #     # Install tools for PDF generation
+  #     - name: Install PDF generation tools
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y wkhtmltopdf
+  #         npm install -g json-to-html
 
-      - name: Generate test results PDF report
-        run: |
-          cd src/${{ matrix.service }}
-          if ls ctrf/*.json 1> /dev/null 2>&1; then
-            # Create a simple HTML file with the test results
-            echo "<html><head><title>Test Results for ${{ matrix.service }}</title></head><body>" > test-report.html
-            echo "<h1>Test Results for ${{ matrix.service }}</h1>" >> test-report.html
+  #     # Format coverage report to PDF
+  #     - name: Generate coverage PDF report
+  #       run: |
+  #         cd src/${{ matrix.service }}
+  #         # Create a simple HTML file with the coverage data
+  #         echo "<html><head><title>Coverage Report for ${{ matrix.service }}</title></head><body>" > coverage-report.html
+  #         echo "<h1>Coverage Report for ${{ matrix.service }}</h1>" >> coverage-report.html
+  #         echo "<pre>" >> coverage-report.html
+  #         cat coverage/coverage-summary.json | jq -r . >> coverage-report.html
+  #         echo "</pre>" >> coverage-report.html
+
+  #         # Add formatted table if needed
+  #         echo "<h2>Coverage Summary</h2>" >> coverage-report.html
+  #         echo "<table border='1'>" >> coverage-report.html
+  #         echo "<tr><th>Category</th><th>Lines %</th><th>Statements %</th><th>Functions %</th><th>Branches %</th></tr>" >> coverage-report.html
+  #         LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+  #         STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
+  #         FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
+  #         BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
+  #         echo "<tr><td>Total</td><td>$LINES</td><td>$STATEMENTS</td><td>$FUNCTIONS</td><td>$BRANCHES</td></tr>" >> coverage-report.html
+  #         echo "</table>" >> coverage-report.html
+  #         echo "</body></html>" >> coverage-report.html
+
+  #         # Convert HTML to PDF
+  #         wkhtmltopdf coverage-report.html coverage-report.pdf
+
+  #     - name: Generate test results PDF report
+  #       run: |
+  #         cd src/${{ matrix.service }}
+  #         if ls ctrf/*.json 1> /dev/null 2>&1; then
+  #           # Create a simple HTML file with the test results
+  #           echo "<html><head><title>Test Results for ${{ matrix.service }}</title></head><body>" > test-report.html
+  #           echo "<h1>Test Results for ${{ matrix.service }}</h1>" >> test-report.html
             
-            for file in ctrf/*.json; do
-              echo "<h2>Test Suite: $(basename "$file")</h2>" >> test-report.html
+  #           for file in ctrf/*.json; do
+  #             echo "<h2>Test Suite: $(basename "$file")</h2>" >> test-report.html
               
-              # Add summary section at the top
-              echo "<div style='background-color: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px;'>" >> test-report.html
-              echo "<h3>Quick Summary</h3>" >> test-report.html
-              echo "<table border='1' cellpadding='5' style='border-collapse: collapse;'>" >> test-report.html
-              echo "<tr><th>Total Tests</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Duration</th></tr>" >> test-report.html
+  #             # Add summary section at the top
+  #             echo "<div style='background-color: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px;'>" >> test-report.html
+  #             echo "<h3>Quick Summary</h3>" >> test-report.html
+  #             echo "<table border='1' cellpadding='5' style='border-collapse: collapse;'>" >> test-report.html
+  #             echo "<tr><th>Total Tests</th><th>Passed</th><th>Failed</th><th>Skipped</th><th>Duration</th></tr>" >> test-report.html
               
-              TESTS=$(cat "$file" | jq -r '.results.summary.tests')
-              PASSED=$(cat "$file" | jq -r '.results.summary.passed')
-              FAILED=$(cat "$file" | jq -r '.results.summary.failed')
-              SKIPPED=$(cat "$file" | jq -r '.results.summary.skipped')
-              START=$(cat "$file" | jq -r '.results.summary.start')
-              STOP=$(cat "$file" | jq -r '.results.summary.stop')
-              DURATION=$((($STOP - $START) / 1000))
+  #             TESTS=$(cat "$file" | jq -r '.results.summary.tests')
+  #             PASSED=$(cat "$file" | jq -r '.results.summary.passed')
+  #             FAILED=$(cat "$file" | jq -r '.results.summary.failed')
+  #             SKIPPED=$(cat "$file" | jq -r '.results.summary.skipped')
+  #             START=$(cat "$file" | jq -r '.results.summary.start')
+  #             STOP=$(cat "$file" | jq -r '.results.summary.stop')
+  #             DURATION=$((($STOP - $START) / 1000))
               
-              echo "<tr><td>$TESTS</td><td>$PASSED</td><td>$FAILED</td><td>$SKIPPED</td><td>${DURATION}s</td></tr>" >> test-report.html
-              echo "</table>" >> test-report.html
-              echo "</div>" >> test-report.html
+  #             echo "<tr><td>$TESTS</td><td>$PASSED</td><td>$FAILED</td><td>$SKIPPED</td><td>${DURATION}s</td></tr>" >> test-report.html
+  #             echo "</table>" >> test-report.html
+  #             echo "</div>" >> test-report.html
               
-              echo "<pre>" >> test-report.html
-              cat "$file" | jq -r . >> test-report.html
-              echo "</pre>" >> test-report.html
-            done
+  #             echo "<pre>" >> test-report.html
+  #             cat "$file" | jq -r . >> test-report.html
+  #             echo "</pre>" >> test-report.html
+  #           done
             
-            echo "</body></html>" >> test-report.html
+  #           echo "</body></html>" >> test-report.html
             
-            # Convert HTML to PDF
-            wkhtmltopdf test-report.html test-report.pdf
-          else
-            echo "No CTRF test result files found."
-          fi
+  #           # Convert HTML to PDF
+  #           wkhtmltopdf test-report.html test-report.pdf
+  #         else
+  #           echo "No CTRF test result files found."
+  #         fi
 
-      # Upload both raw coverage reports and PDF reports as artifacts
-      - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: testing-report-${{ matrix.service }}
-          path: |
-            src/${{ matrix.service }}/coverage-report.pdf
-            src/${{ matrix.service }}/test-report.pdf
-          retention-days: 10
+  #     # Upload both raw coverage reports and PDF reports as artifacts
+  #     - name: Upload coverage reports
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: testing-report-${{ matrix.service }}
+  #         path: |
+  #           src/${{ matrix.service }}/coverage-report.pdf
+  #           src/${{ matrix.service }}/test-report.pdf
+  #         retention-days: 10
 
-      # Package Lambda function
-      - name: Package Lambda function
-        run: |
-          cd src/${{ matrix.service }}
-          zip -r ../../terraform/lambda-deployment-package-${{ matrix.service }}.zip .
+  #     # Package Lambda function
+  #     - name: Package Lambda function
+  #       run: |
+  #         cd src/${{ matrix.service }}
+  #         zip -r ../../terraform/lambda-deployment-package-${{ matrix.service }}.zip .
 
-      # Upload as an artifact
-      - name: Upload Lambda package
-        uses: actions/upload-artifact@v4
-        with:
-          name: lambda-package-${{ matrix.service }}
-          path: terraform/lambda-deployment-package-${{ matrix.service }}.zip
-          retention-days: 10
+  #     # Upload as an artifact
+  #     - name: Upload Lambda package
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: lambda-package-${{ matrix.service }}
+  #         path: terraform/lambda-deployment-package-${{ matrix.service }}.zip
+  #         retention-days: 10
 
   mark-success:
     runs-on: ubuntu-latest
