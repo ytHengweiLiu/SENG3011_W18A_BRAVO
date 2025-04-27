@@ -1,48 +1,43 @@
 const axios = require("axios");
 
-const COLLECT_API_URL = "https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/scrape";
-const RETRIEVE_API_URL = "https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/retrieve";
-const ANALYSE_API_URL = "https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/analyse";
+const COLLECTION_URL = "https://yetriidc3m.execute-api.us-east-1.amazonaws.com/default/nba-collection-lambda-v2?team1=WAS&team2=BOS"
+const RETREIVE_URL = "https://4keygboi7k.execute-api.us-east-1.amazonaws.com/default/nba-retrieve-lambda-v2?team1=WAS&team2=BOS"
+const ANALYSE_URL = "https://1pka1875p6.execute-api.us-east-1.amazonaws.com/default/nba-analyse-lambda-v2?team1=WAS&team2=BOS&home=0"
 
-const TEAM_1 = "LA Lakers";
-const TEAM_2 = "Washington";
 
 describe("System contract test", () => {
-    test("Success work flow", async () => {
-        const scrape_response = await axios.get(COLLECT_API_URL);
+  test("Successful Workflow", async () => {
+    const collection_response = await axios.get(COLLECTION_URL);
+
+    expect(collection_response.status).toBe(200);
+
+    const collection_data = collection_response.data;
+    
+    expect(collection_data).toHaveProperty("message");
+    expect(collection_data.message).toContain("Successfully uploaded!");
+
+    expect(collection_data).toHaveProperty("object_key");
+
+
+    const retrieve_response = await axios.get(RETREIVE_URL);
+
+    expect(retrieve_response.status).toBe(200);
+
+    const retrieve_data = retrieve_response.data;
+    
+    expect(retrieve_data).toHaveProperty("stats");
         
-        expect(scrape_response.status).toBe(200);
-        expect(scrape_response.data.message).toContain("Data scraped and uploaded to S3");
+    
+    const analyse_response = await axios.get(ANALYSE_URL);
 
-        const retrieve_response = await axios.get(RETRIEVE_API_URL);
+    expect(analyse_response.status).toBe(200);
 
-        expect(retrieve_response.status).toBe(200);
-        const retrievedData = retrieve_response.data;
-        expect(retrievedData).toHaveProperty("data_source", "Yahoo Sports");
-        expect(retrievedData).toHaveProperty("dataset_type", "NBA Team Statistics");
-        expect(retrievedData.events.length).toBeGreaterThan(0);
-
-        const requestBody = { team1: TEAM_1, team2: TEAM_2 };
-        const response = await axios.post(ANALYSE_API_URL, requestBody, {
-        headers: { "Content-Type": "application/json" },
-        });
-
-        expect(response.status).toBe(200);
-
-        const data = response.data;
-
-        expect(data).toHaveProperty("analysis");
-        expect(data.analysis).toHaveProperty("winProbabilities");
-        expect(data.analysis.winProbabilities).toHaveProperty(TEAM_1);
-        expect(data.analysis.winProbabilities).toHaveProperty(TEAM_2);
-
-        const prob1 = data.analysis.winProbabilities[TEAM_1];
-        const prob2 = data.analysis.winProbabilities[TEAM_2];
-
-        expect(prob1).toBeGreaterThanOrEqual(0);
-        expect(prob1).toBeLessThanOrEqual(1);
-        expect(prob2).toBeGreaterThanOrEqual(0);
-        expect(prob2).toBeLessThanOrEqual(1);
-        expect(prob1 + prob2).toBeCloseTo(1, 1);
-    }, 50000)
-})
+    const analyse_data = analyse_response.data;
+    
+    expect(analyse_data).toHaveProperty("timestamp");
+    expect(analyse_data).toHaveProperty("winning_rate");
+    expect(analyse_data).toHaveProperty("prediction");
+    expect(analyse_data).toHaveProperty("model_accuracy");
+    expect(analyse_data).toHaveProperty("input_features");
+  }, 20000);
+});

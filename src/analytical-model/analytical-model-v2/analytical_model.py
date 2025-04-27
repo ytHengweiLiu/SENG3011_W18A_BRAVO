@@ -14,7 +14,7 @@ import xgboost as xgb
 
 def lambda_handler(event, context):
     try:
-        print("EVENT RECEIVED:", json.dumps(event))
+        # print("EVENT RECEIVED:", json.dumps(event))
         # home court advantage
         # Handles both API Gateway and direct invocation from local proxy
         team1_abbr = None
@@ -54,11 +54,11 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Missing team1 or team2 abbreviation or home court advantage.'})
             }
 
-        print(team1_abbr)
-        print(team2_abbr)
+        # print(team1_abbr)
+        # print(team2_abbr)
         home_court = float(home_court)
-        print(type(home_court))
-        print(home_court)
+        # print(type(home_court))
+        # print(home_court)
 
         if (not(home_court == 0 or home_court == 1)):
             return {
@@ -72,7 +72,7 @@ def lambda_handler(event, context):
         ANALYSE_URL="https://h0gn7fm71g.execute-api.ap-southeast-2.amazonaws.com/dev/analyse"
 
         file_name = f"{team1_abbr}vs{team2_abbr}.json"
-        print(file_name)
+        # print(file_name)
         # Load variables from .env file
         dotenv.load_dotenv()
 
@@ -189,9 +189,14 @@ def lambda_handler(event, context):
         else:
             print(f"Error during preprocessing: {preprocess_response.status_code}, ")
 
-
+        print("192")
+        print(f"X: {X}")
+        print(f"y: {y}")
         # Split data
+        print(train_test_split(X, y, test_size=0.2, random_state=42))
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        print("196")
 
         # # Create the XGBoost model
         # model = xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss')
@@ -240,6 +245,7 @@ def lambda_handler(event, context):
 
 
     except Exception as e:
+        print(e)
         return {
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})

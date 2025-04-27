@@ -1,24 +1,47 @@
-// This test suite only includes success tests since the Lambda function doesn't take any input.
-
 const axios = require("axios");
 
-const COLLECT_API_URL = "https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/scrape";
-const RETRIEVE_API_URL = "https://1gz0wm5412.execute-api.us-east-1.amazonaws.com/prod/retrieve";
+describe("E2E Test for Retrieve API", () => {
+  test("Missing team parameter", async () => {
+    const url = "https://4keygboi7k.execute-api.us-east-1.amazonaws.com/default/nba-retrieve-lambda-v2?team1=BOS";
 
-describe("E2E Test for DATA RETRIEVE", () => {
-  test("S3 file is retrieved successfully", async () => {
-    const scrape_response = await axios.get(COLLECT_API_URL);
+    try {
+      await axios.get(url);
+    } catch (error) {
+      const response = error.response;
+
+      expect(response.status).toBe(400);
+
+      const data = response.data;
+
+      expect(data.error).toContain("Missing team1 or team2 abbreviation");
+    }
+  });
+
+  test("Invalid Team Name", async () => {
+    const url = "https://4keygboi7k.execute-api.us-east-1.amazonaws.com/default/nba-retrieve-lambda-v2?team1=BOS&team2=AAA";
+
+    try {
+      await axios.get(url);
+    } catch (error) {
+      const response = error.response;
+
+      expect(response.status).toBe(500);
+
+      const data = response.data;
+
+      expect(data.error).toContain("An error occurred (NoSuchKey) when calling the GetObject operation: The specified key does not exist.");
+    }
+  });
+
+  test("Successfully retrieve the data", async () => {
+    const url = "https://4keygboi7k.execute-api.us-east-1.amazonaws.com/default/nba-retrieve-lambda-v2?team1=BOS&team2=CLE"
+    const response = await axios.get(url);
+
+    expect(response.status).toBe(200);
+
+    const data = response.data;
     
-    expect(scrape_response.status).toBe(200);
-    expect(scrape_response.data.message).toContain("Data scraped and uploaded to S3");
+    expect(data).toHaveProperty("stats");
+  }, 10000);
 
-
-    const retrieve_response = await axios.get(RETRIEVE_API_URL);
-
-    expect(retrieve_response.status).toBe(200);
-    const retrievedData = retrieve_response.data;
-    expect(retrievedData).toHaveProperty("data_source", "Yahoo Sports");
-    expect(retrievedData).toHaveProperty("dataset_type", "NBA Team Statistics");
-    expect(retrievedData.events.length).toBeGreaterThan(0);
-  }, 50000);
 });
