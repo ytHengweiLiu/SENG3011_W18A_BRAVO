@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import data_collect
 import json
+import os
 
 class TestLambdaHandler(unittest.TestCase):
     @patch.dict(os.environ, {"BUCKET_NAME": "fake-bucket", "AWS_REGION": "us-east-1"})
