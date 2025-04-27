@@ -34,6 +34,13 @@ class TestLambdaHandler(unittest.TestCase):
             'BLK': 5,
             'TOV': 12,
             'PF': 18,
+            'MIN': 0,
+            'SEASON_ID': '2024-25',
+            'TEAM_ID': 1610612747,
+            'PLUS_MINUS': 5,
+            'TEAM_ABBREVIATION': 'LAL',
+            'TEAM_NAME': 'Los Angeles Lakers',
+            'GAME_ID': '0022100001'
         }])
         
         mock_leaguegamefinder_instance.get_data_frames.return_value = [fake_df]
