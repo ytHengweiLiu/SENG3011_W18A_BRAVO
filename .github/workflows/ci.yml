@@ -25,8 +25,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest
-
+        pip install pytest pytest-cov numpy python-dotenv boto3 pytz requests scikit-learn xgboost nba_api pandas
+  
     - name: Run tests
       run: |
         pytest src/analytical-model/analytical-model-v2/test_analytical_model.py
