@@ -3,23 +3,43 @@ from unittest.mock import patch, MagicMock
 import data_collect
 import json
 import os
+import pandas as pd
 
 class TestLambdaHandler(unittest.TestCase):
     @patch.dict(os.environ, {"BUCKET_NAME": "fake-bucket", "AWS_REGION": "us-east-1"})
-    @patch('data_collect.requests.get')
     @patch('data_collect.boto3.Session')
-    def test_lambda_handler_success(self, mock_session, mock_requests_get):
-        mock_s3_client = MagicMock()
-        mock_session.return_value.client.return_value = mock_s3_client
-        mock_s3_client.get_object.return_value = {
-            'Body': MagicMock(read=lambda: b'{"events": {"some": "data"}}')
-        }
+    @patch('data_collect.leaguegamefinder.LeagueGameFinder')
+    def test_lambda_handler_success(self, mock_leaguegamefinder, mock_boto3_session):
+        mock_leaguegamefinder_instance = MagicMock()
+        mock_leaguegamefinder.return_value = mock_leaguegamefinder_instance
+        
+        fake_df = pd.DataFrame([{
+            'MATCHUP': 'LAL vs BOS',
+            'WL': 'W',
+            'PTS': 120,
+            'FGM': 40,
+            'FGA': 85,
+            'FG_PCT': 0.470,
+            'FG3M': 10,
+            'FG3A': 30,
+            'FG3_PCT': 0.333,
+            'FTM': 30,
+            'FTA': 35,
+            'FT_PCT': 0.857,
+            'OREB': 10,
+            'DREB': 30,
+            'REB': 40,
+            'AST': 25,
+            'STL': 7,
+            'BLK': 5,
+            'TOV': 12,
+            'PF': 18,
+        }])
+        
+        mock_leaguegamefinder_instance.get_data_frames.return_value = [fake_df]
 
-        # Fake a successful NBA API response
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"resultSets": []}
-        mock_response.status_code = 200
-        mock_requests_get.return_value = mock_response
+        mock_s3_client = MagicMock()
+        mock_boto3_session.return_value.client.return_value = mock_s3_client
 
         event = {
             'queryStringParameters': {
@@ -33,9 +53,7 @@ class TestLambdaHandler(unittest.TestCase):
         print("Response:", response)
 
         self.assertEqual(response['statusCode'], 200)
-        body = json.loads(response['body'])
-        self.assertIn('message', body)
-        self.assertIn('object_key', body)
+        self.assertIn('Successfully uploaded', response['body'])
 
     @patch('data_collect.boto3.Session')
     def test_lambda_handler_missing_team_abbreviation(self, mock_session):
