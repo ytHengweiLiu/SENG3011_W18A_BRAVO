@@ -4,6 +4,7 @@ import data_collect
 import json
 
 class TestLambdaHandler(unittest.TestCase):
+    @patch.dict(os.environ, {"BUCKET_NAME": "fake-bucket", "AWS_REGION": "us-east-1"})
     @patch('data_collect.boto3.Session')
     def test_lambda_handler_success(self, mock_session):
         mock_s3_client = MagicMock()
@@ -21,8 +22,10 @@ class TestLambdaHandler(unittest.TestCase):
 
         response = data_collect.lambda_handler(event, None)
 
+        print("Response:", response)
+
         self.assertEqual(response['statusCode'], 200)
-        body = response['body']
+        body = json.loads(response['body'])
         self.assertIn('message', body)
         self.assertIn('object_key', body)
 
