@@ -29,10 +29,9 @@ jobs:
   
     - name: Run tests
       run: |
-        pytest src/analytical-model/analytical-model-v2/test_analytical_model.py
-        pytest src/data-collect/data-collect-v2/test_data_collect.py
-        pytest src/data-retrieve/data-retrieve-v2/test_data_retrieve.py
-  # test:
+        pytest --cov=src/analytical-model/analytical-model-v2 src/analytical-model/analytical-model-v2/test_analytical_model.py
+        pytest --cov=src/data-collect/data-collect-v2 src/data-collect/data-collect-v2/test_data_collect.py
+        pytest --cov=src/data-retrieve/data-retrieve-v2 src/data-retrieve/data-retrieve-v2/test_data_retrieve.py  # test:
   #   runs-on: ubuntu-latest
   #   strategy:
   #     matrix:
