@@ -14,6 +14,7 @@ import xgboost as xgb
 
 def lambda_handler(event, context):
     try:
+        # test CD
         # print("EVENT RECEIVED:", json.dumps(event))
         # home court advantage
         # Handles both API Gateway and direct invocation from local proxy
