@@ -1,0 +1,7 @@
+numpy
+xgboost
+scikit-learn
+boto3
+requests
+python-dotenv
+pytz
