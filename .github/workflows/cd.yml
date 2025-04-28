@@ -6,6 +6,8 @@ on:
     types:
       - completed
   workflow_dispatch:
+  push:
+    paths:
       - 'src/analytical-model/analytical-model-v2/analytical_model.py'
       - 'src/data-collect/data-collect-v2/data_collect.py'
       - 'src/data-retrieve/data-retrieve-v2/data_retrieve.py'
