@@ -21,16 +21,16 @@ jobs:
 
       - name: Zip Analytic Model Lambda
         run: |
-          cd src/analytical-model
-          zip -r ../../analytical-model.zip .
+          cd src/analytical-model/analytical-model-v2
+          zip -r ../../../NBA-ANALYSE-LAMBDA-V2.zip .
           cd ../..
 
       - name: Deploy Analytic Model Lambda
         uses: imehedi/actions-awscli-v2@latest
         with:
           args: "lambda update-function-code \
-            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda \
-            --zip-file fileb://analytical-model.zip"
+            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-analyse-lambda-v2 \
+            --zip-file fileb://NBA-ANALYSE-LAMBDA-V2.zip"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -38,16 +38,16 @@ jobs:
 
       - name: Zip Data Collect Lambda
         run: |
-          cd src/data-collect
-          zip -r ../../data-collect.zip .
+          cd src/data-collect/data-collect-v2
+          zip -r ../../../NBA-COLLECTION-LAMBDA-V2.zip .
           cd ../..
 
       - name: Deploy Data Collect Lambda
         uses: imehedi/actions-awscli-v2@latest
         with:
           args: "lambda update-function-code \
-            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-scraper-lambda \
-            --zip-file fileb://data-collect.zip"
+            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-collection-lambda-v2 \
+            --zip-file fileb://NBA-COLLECTION-LAMBDA-V2.zip"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -55,16 +55,16 @@ jobs:
 
       - name: Zip Data Retrieve Lambda
         run: |
-          cd src/data-retrieve
-          zip -r ../../data-retrieve.zip .
+          cd src/data-retrieve/data-retrieve-v2
+          zip -r ../../../NBA-RETRIEVE-LAMBDA-V2.zip .
           cd ../..
 
       - name: Deploy Data Retrieve Lambda
         uses: imehedi/actions-awscli-v2@latest
         with:
           args: "lambda update-function-code \
-            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-retriever-lambda \
-            --zip-file fileb://data-retrieve.zip"
+            --function-name arn:aws:lambda:us-east-1:851725446831:function:nba-retrieve-lambda-v2 \
+            --zip-file fileb://NBA-RETRIEVE-LAMBDA-V2.zip"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

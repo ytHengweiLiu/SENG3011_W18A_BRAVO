@@ -20,7 +20,7 @@ class TestLambdaHandler(unittest.TestCase):
         }
 
         response = data_retrieve.lambda_handler(event, None)
-
+        print(response)
         self.assertEqual(response['statusCode'], 200)
         body = response['body']
         self.assertIn('stats', body)
